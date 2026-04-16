@@ -391,81 +391,90 @@ export default function Home() {
 
         {activeTab === "calculator" ? (
           <>
+            {/* TOP: Game Selection */}
+            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 space-y-4">
+              <h2 className="font-semibold text-slate-200">{t.gameSelect}</h2>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(GAMES).map(([key, g]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedGame(key as GameType)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
+                      selectedGame === key
+                        ? "bg-emerald-600 border-emerald-500 text-white"
+                        : "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                    }`}
+                  >
+                    {g.name}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500">{GAMES[selectedGame].description}</p>
+            </div>
+
+            {/* BOTTOM: Seed info + game-specific options + Calculate */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-800 rounded-xl p-4 space-y-4 border border-slate-700">
+              {/* Seed fields */}
+              <div className="bg-slate-800 rounded-xl p-4 space-y-3 border border-slate-700">
                 <h2 className="font-semibold text-slate-200">{t.seedInfo}</h2>
-                <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-slate-400 block mb-1">{t.serverSeed}</label>
+                  <input
+                    type="text"
+                    value={serverSeed}
+                    onChange={(e) => setServerSeed(e.target.value)}
+                    placeholder={t.serverSeedPlaceholder}
+                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                  {serverSeed && (
+                    <button onClick={hashSeed} className="mt-1 text-xs text-emerald-400 hover:text-emerald-300">
+                      {t.generateHash}
+                    </button>
+                  )}
+                  {serverSeedHash && (
+                    <p className="text-xs text-slate-400 mt-1 font-mono break-all">
+                      {t.hashLabel} {serverSeedHash}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm text-slate-400 block mb-1">{t.clientSeed}</label>
+                  <input
+                    type="text"
+                    value={clientSeed}
+                    onChange={(e) => setClientSeed(e.target.value)}
+                    placeholder={t.clientSeedPlaceholder}
+                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm text-slate-400 block mb-1">{t.serverSeed}</label>
+                    <label className="text-sm text-slate-400 block mb-1">{t.startNonce}</label>
                     <input
-                      type="text"
-                      value={serverSeed}
-                      onChange={(e) => setServerSeed(e.target.value)}
-                      placeholder={t.serverSeedPlaceholder}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                      type="number"
+                      value={nonceStart}
+                      onChange={(e) => setNonceStart(Math.max(1, parseInt(e.target.value) || 1))}
+                      min={1}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
-                    {serverSeed && (
-                      <button onClick={hashSeed} className="mt-1 text-xs text-emerald-400 hover:text-emerald-300">
-                        {t.generateHash}
-                      </button>
-                    )}
-                    {serverSeedHash && (
-                      <p className="text-xs text-slate-400 mt-1 font-mono break-all">
-                        {t.hashLabel} {serverSeedHash}
-                      </p>
-                    )}
                   </div>
                   <div>
-                    <label className="text-sm text-slate-400 block mb-1">{t.clientSeed}</label>
+                    <label className="text-sm text-slate-400 block mb-1">{t.spinCount}</label>
                     <input
-                      type="text"
-                      value={clientSeed}
-                      onChange={(e) => setClientSeed(e.target.value)}
-                      placeholder={t.clientSeedPlaceholder}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                      type="number"
+                      value={nonceCount}
+                      onChange={(e) => setNonceCount(Math.min(200, Math.max(1, parseInt(e.target.value) || 1)))}
+                      min={1}
+                      max={200}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-sm text-slate-400 block mb-1">{t.startNonce}</label>
-                      <input
-                        type="number"
-                        value={nonceStart}
-                        onChange={(e) => setNonceStart(Math.max(1, parseInt(e.target.value) || 1))}
-                        min={1}
-                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm text-slate-400 block mb-1">{t.spinCount}</label>
-                      <input
-                        type="number"
-                        value={nonceCount}
-                        onChange={(e) => setNonceCount(Math.min(200, Math.max(1, parseInt(e.target.value) || 1)))}
-                        min={1}
-                        max={200}
-                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-slate-800 rounded-xl p-4 space-y-4 border border-slate-700">
-                <h2 className="font-semibold text-slate-200">{t.gameSelect}</h2>
-                <div>
-                  <label className="text-sm text-slate-400 block mb-1">{t.game}</label>
-                  <select
-                    value={selectedGame}
-                    onChange={(e) => setSelectedGame(e.target.value as GameType)}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
-                  >
-                    {Object.entries(GAMES).map(([key, g]) => (
-                      <option key={key} value={key}>{g.name}</option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500 mt-1">{GAMES[selectedGame].description}</p>
-                </div>
+              {/* Game-specific options + Calculate */}
+              <div className="bg-slate-800 rounded-xl p-4 space-y-4 border border-slate-700 flex flex-col">
+                <h2 className="font-semibold text-slate-200">{t.gameOptions}</h2>
 
                 {selectedGame === "wheel" && (
                   <div className="grid grid-cols-2 gap-3">
@@ -548,13 +557,19 @@ export default function Home() {
                   </div>
                 )}
 
-                <button
-                  onClick={calculateAll}
-                  disabled={loading || !serverSeed || !clientSeed}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors"
-                >
-                  {loading ? t.calculating : t.calcButton}
-                </button>
+                {!["wheel", "plinko", "mines", "limbo"].includes(selectedGame) && (
+                  <p className="text-sm text-slate-500 flex-1">{t.noExtraOptions}</p>
+                )}
+
+                <div className="mt-auto">
+                  <button
+                    onClick={calculateAll}
+                    disabled={loading || !serverSeed || !clientSeed}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors"
+                  >
+                    {loading ? t.calculating : t.calcButton}
+                  </button>
+                </div>
               </div>
             </div>
 

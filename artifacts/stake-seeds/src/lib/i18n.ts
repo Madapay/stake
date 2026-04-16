@@ -33,6 +33,8 @@ export const translations = {
     limboTargetPlaceholder: "örn: 1000",
     limboTargetSuffix: "x ve üzeri",
     limboTargetHint: "Boş bırakırsanız tüm sonuçlar gösterilir",
+    gameOptions: "Oyun Seçenekleri",
+    noExtraOptions: "Bu oyun için ek ayar gerekmez.",
 
     resultsTitle: "Sonuçlar",
     spins: "spin",
@@ -101,6 +103,8 @@ export const translations = {
     limboTargetPlaceholder: "e.g. 1000",
     limboTargetSuffix: "x and above",
     limboTargetHint: "Leave empty to show all results",
+    gameOptions: "Game Options",
+    noExtraOptions: "No extra settings needed for this game.",
 
     resultsTitle: "Results",
     spins: "spins",
