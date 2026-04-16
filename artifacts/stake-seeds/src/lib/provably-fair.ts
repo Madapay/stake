@@ -148,10 +148,8 @@ export async function generateFloats(
 function fisherYatesShuffle<T>(deck: T[], floats: number[]): T[] {
   const arr = [...deck];
   for (let i = 0; i < floats.length; i++) {
-    const remaining = arr.length - i;
-    const index = Math.floor(floats[i] * remaining);
-    const picked = arr.splice(i + index, 1)[0];
-    arr.splice(i, 0, picked);
+    const j = i + Math.floor(floats[i] * (arr.length - i));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
@@ -278,25 +276,18 @@ export async function calculateGameResult(
     case "blackjack":
     case "hilo": {
       const floats = await generateFloats(serverSeed, clientSeed, nonce, 0, 52);
-      const cards = floats.map((f) => CARDS[Math.floor(f * 52)]);
-      return { type: "cards", cards: cards.slice(0, 10), game };
+      const shuffled = fisherYatesShuffle([...CARDS], floats);
+      return { type: "cards", cards: shuffled.slice(0, 10), game };
     }
     case "baccarat": {
-      const floats = await generateFloats(serverSeed, clientSeed, nonce, 0, 6);
-      const cards = floats.map((f) => CARDS[Math.floor(f * 52)]);
-      return { type: "cards", cards, game: "baccarat" };
+      const floats = await generateFloats(serverSeed, clientSeed, nonce, 0, 52);
+      const shuffled = fisherYatesShuffle([...CARDS], floats);
+      return { type: "cards", cards: shuffled.slice(0, 6), game: "baccarat" };
     }
     case "video-poker": {
       const floats = await generateFloats(serverSeed, clientSeed, nonce, 0, 52);
-      const deck = [...CARDS];
-      const dealtCards: string[] = [];
-      const remaining = [...deck];
-      for (const f of floats.slice(0, 5)) {
-        const index = Math.floor(f * remaining.length);
-        dealtCards.push(remaining[index]);
-        remaining.splice(index, 1);
-      }
-      return { type: "video-poker", cards: dealtCards };
+      const shuffled = fisherYatesShuffle([...CARDS], floats);
+      return { type: "video-poker", cards: shuffled.slice(0, 5) };
     }
     case "flip": {
       const floats = await generateFloats(serverSeed, clientSeed, nonce, 0, 20);
