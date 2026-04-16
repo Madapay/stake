@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Stake Seed Calculator"
+version = "1.0.0"
+id = "artifacts/stake-seeds"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19165
+
+[services.development]
+run = "pnpm --filter @workspace/stake-seeds run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/stake-seeds", "run", "build" ]
+publicDir = "artifacts/stake-seeds/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19165"
+BASE_PATH = "/"

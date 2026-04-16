@@ -4,6 +4,19 @@
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
 
+## Artifacts
+
+### Stake Seed Calculator (`artifacts/stake-seeds`)
+- **URL**: `/` (root)
+- **Type**: React + Vite (frontend-only, no backend)
+- **Purpose**: Provably fair seed calculator for Stake.com casino games
+- **Features**:
+  - HMAC-SHA256 based RNG (Web Crypto API, runs in browser)
+  - Supports 18+ games: Dice, Limbo, Crash, Wheel, Roulette, Diamonds, Plinko, Mines, Keno, Blackjack, Hilo, Baccarat, Video Poker, Flip, Snakes, Rock-Paper-Scissors, Chicken, Pump
+  - Calculates all spin results for a given server seed + client seed pair
+  - Server seed SHA256 hash verifier
+  - Turkish language UI
+
 ## Stack
 
 - **Monorepo tool**: pnpm workspaces
