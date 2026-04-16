@@ -35,6 +35,33 @@ const ROULETTE_COLORS: Record<number, "red" | "black" | "green"> = {
   31: "black", 32: "red", 33: "black", 34: "red", 35: "black", 36: "red",
 };
 
+function getSpinValue(result: GameResultData): number | null {
+  switch (result.type) {
+    case "dice": return (result as DiceResult).roll;
+    case "limbo": return (result as LimboResult).multiplier;
+    case "crash": return (result as CrashResult).multiplier;
+    case "wheel": return (result as WheelResult).payout;
+    case "roulette": return (result as RouletteResult).pocket;
+    case "plinko": return (result as PlinkoResult).slot;
+    case "keno": return (result as KenoResult).hits.length;
+    case "flip": return (result as FlipResult).flips.filter((f) => f === "Tura" || f === "Heads").length;
+    case "snakes": return (result as SnakesResult).rolls.reduce((a, b) => a + b, 0);
+    default: return null;
+  }
+}
+
+function getTargetHintKey(game: string): keyof T {
+  if (game === "dice") return "targetFilterHintDice";
+  if (game === "limbo" || game === "crash") return "targetFilterHintMult";
+  if (game === "wheel") return "targetFilterHintPayout";
+  if (game === "roulette") return "targetFilterHintPocket";
+  if (game === "plinko") return "targetFilterHintSlot";
+  if (game === "keno") return "targetFilterHintHits";
+  if (game === "flip") return "targetFilterHintFlip";
+  if (game === "snakes") return "targetFilterHintHits";
+  return "targetFilterHint";
+}
+
 function ResultDisplay({ result, t }: { result: GameResultData; t: T }) {
   switch (result.type) {
     case "dice": {
@@ -298,6 +325,7 @@ export default function Home() {
   const [plinkoRows, setPlinkoRows] = useState(16);
   const [mineCount, setMineCount] = useState(3);
   const [limboTarget, setLimboTarget] = useState<number | "">(2);
+  const [targetFilter, setTargetFilter] = useState<number | "">("");
   const [results, setResults] = useState<SpinResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [serverSeedHash, setServerSeedHash] = useState("");
@@ -392,24 +420,18 @@ export default function Home() {
         {activeTab === "calculator" ? (
           <>
             {/* TOP: Game Selection */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 space-y-4">
-              <h2 className="font-semibold text-slate-200">{t.gameSelect}</h2>
-              <div className="flex flex-wrap gap-2">
+            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+              <label className="text-sm text-slate-400 block mb-2 font-semibold">{t.gameSelect}</label>
+              <select
+                value={selectedGame}
+                onChange={(e) => { setSelectedGame(e.target.value as GameType); setTargetFilter(""); }}
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+              >
                 {Object.entries(GAMES).map(([key, g]) => (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedGame(key as GameType)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
-                      selectedGame === key
-                        ? "bg-emerald-600 border-emerald-500 text-white"
-                        : "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
-                    }`}
-                  >
-                    {g.name}
-                  </button>
+                  <option key={key} value={key}>{g.name}</option>
                 ))}
-              </div>
-              <p className="text-xs text-slate-500">{GAMES[selectedGame].description}</p>
+              </select>
+              <p className="text-xs text-slate-500 mt-1.5">{GAMES[selectedGame].description}</p>
             </div>
 
             {/* BOTTOM: Seed info + game-specific options + Calculate */}
@@ -472,7 +494,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Game-specific options + Calculate */}
+              {/* Game-specific options + Target filter + Calculate */}
               <div className="bg-slate-800 rounded-xl p-4 space-y-4 border border-slate-700 flex flex-col">
                 <h2 className="font-semibold text-slate-200">{t.gameOptions}</h2>
 
@@ -534,32 +556,25 @@ export default function Home() {
                   </div>
                 )}
 
-                {selectedGame === "limbo" && (
-                  <div>
-                    <label className="text-sm text-slate-400 block mb-1">{t.limboTarget}</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={limboTarget}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "") setLimboTarget("");
-                          else setLimboTarget(Math.max(1.01, parseFloat(v) || 1.01));
-                        }}
-                        min={1.01}
-                        step={0.01}
-                        placeholder={t.limboTargetPlaceholder}
-                        className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                      />
-                      <span className="text-slate-400 text-sm shrink-0">{t.limboTargetSuffix}</span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">{t.limboTargetHint}</p>
-                  </div>
-                )}
-
-                {!["wheel", "plinko", "mines", "limbo"].includes(selectedGame) && (
-                  <p className="text-sm text-slate-500 flex-1">{t.noExtraOptions}</p>
-                )}
+                {/* Universal target filter — shown for all games that have a numeric value */}
+                <div>
+                  <label className="text-sm text-slate-400 block mb-1">{t.targetFilter}</label>
+                  <input
+                    type="number"
+                    value={targetFilter}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "") setTargetFilter("");
+                      else setTargetFilter(parseFloat(v));
+                    }}
+                    step={0.01}
+                    placeholder={t.targetFilterPlaceholder}
+                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    {t[getTargetHintKey(selectedGame)] as string}
+                  </p>
+                </div>
 
                 <div className="mt-auto">
                   <button
@@ -574,10 +589,16 @@ export default function Home() {
             </div>
 
             {results.length > 0 && (() => {
-              const isLimboFiltered = selectedGame === "limbo" && limboTarget !== "";
-              const target = typeof limboTarget === "number" ? limboTarget : 0;
-              const hits = isLimboFiltered
-                ? results.filter((s) => s.result.type === "limbo" && (s.result as LimboResult).multiplier >= target)
+              const isFiltered = targetFilter !== "";
+              const target = typeof targetFilter === "number" ? targetFilter : 0;
+              const isRoulette = selectedGame === "roulette";
+
+              const hits = isFiltered
+                ? results.filter((s) => {
+                    const v = getSpinValue(s.result);
+                    if (v === null) return false;
+                    return isRoulette ? v === target : v >= target;
+                  })
                 : [];
 
               return (
@@ -587,10 +608,11 @@ export default function Home() {
                       {t.resultsTitle} ({results.length} {t.spins})
                     </h2>
                     <div className="flex items-center gap-3">
-                      {isLimboFiltered && (
+                      {isFiltered && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-slate-400">
-                            <span className="font-bold text-yellow-400">{target}x</span> {t.andAbove}
+                            <span className="font-bold text-yellow-400">{target}</span>
+                            {" "}{isRoulette ? "=" : "≥"}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-sm font-bold ${hits.length > 0 ? "bg-emerald-700 text-emerald-200" : "bg-slate-700 text-slate-400"}`}>
                             {hits.length} / {results.length} {t.hits}
@@ -598,14 +620,15 @@ export default function Home() {
                         </div>
                       )}
                       <span className="text-sm text-slate-400">
-                        {GAMES[selectedGame].name} · Nonce {results[0].nonce} - {results[results.length - 1].nonce}
+                        {GAMES[selectedGame].name} · Nonce {results[0].nonce} – {results[results.length - 1].nonce}
                       </span>
                     </div>
                   </div>
                   <div className="divide-y divide-slate-700">
                     {results.map((spin) => {
-                      const isHit = isLimboFiltered && spin.result.type === "limbo" && (spin.result as LimboResult).multiplier >= target;
-                      const isMiss = isLimboFiltered && !isHit;
+                      const v = getSpinValue(spin.result);
+                      const isHit = isFiltered && v !== null && (isRoulette ? v === target : v >= target);
+                      const isMiss = isFiltered && !isHit;
                       return (
                         <div
                           key={spin.nonce}
