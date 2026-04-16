@@ -714,12 +714,13 @@ export default function Home() {
               const target = typeof targetFilter === "number" ? targetFilter : 0;
               const limboResults = results.filter((s) => s.result.type === "limbo") as SpinResult[];
               const hits = isFiltered ? limboResults.filter((s) => (s.result as LimboResult).multiplier >= target) : [];
-              const rows = [...limboResults].sort((a, b) => {
+              const sortedAll = [...limboResults].sort((a, b) => {
                 if (limboSort === "multiplier") {
                   return (b.result as LimboResult).multiplier - (a.result as LimboResult).multiplier;
                 }
                 return a.nonce - b.nonce;
               });
+              const rows = isFiltered ? sortedAll.filter((s) => (s.result as LimboResult).multiplier >= target) : sortedAll;
 
               return (
                 <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
@@ -728,7 +729,9 @@ export default function Home() {
                     <h2 className="font-semibold text-slate-200">
                       {t.resultsTitle}
                       {limboResults.length > 0 && (
-                        <span className="ml-2 text-slate-400 font-normal text-sm">({limboResults.length} {t.spins})</span>
+                        <span className="ml-2 text-slate-400 font-normal text-sm">
+                          ({isFiltered ? `${hits.length} / ${limboResults.length}` : limboResults.length} {t.spins})
+                        </span>
                       )}
                       {isFiltered && limboResults.length > 0 && (
                         <span className={`ml-3 px-2 py-0.5 rounded-full text-sm font-bold ${hits.length > 0 ? "bg-emerald-700 text-emerald-200" : "bg-slate-700 text-slate-400"}`}>
@@ -786,15 +789,12 @@ export default function Home() {
                           rows.map((spin, idx) => {
                             const mult = (spin.result as LimboResult).multiplier;
                             const isHit = isFiltered && mult >= target;
-                            const isMiss = isFiltered && !isHit;
                             return (
                               <tr
                                 key={spin.nonce}
                                 className={`transition-colors ${
                                   isHit
                                     ? "bg-emerald-900/20 border-l-2 border-l-emerald-500"
-                                    : isMiss
-                                    ? "opacity-30"
                                     : "hover:bg-slate-700/30"
                                 }`}
                               >
@@ -845,7 +845,11 @@ export default function Home() {
                   })
                 : [];
 
-              const displayResults = minesShowSafeOnly ? safeResults : results;
+              /* when filter active: show only matching results */
+              const filteredHits = isFiltered ? hits : results;
+              const displayResults = isMines
+                ? (minesShowSafeOnly ? safeResults : results)
+                : (isFiltered ? filteredHits : results);
 
               return (
                 <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
@@ -854,7 +858,11 @@ export default function Home() {
                       {t.resultsTitle}
                       {results.length > 0 && (
                         <span className="ml-2 text-slate-400 font-normal text-sm">
-                          ({minesShowSafeOnly ? `${safeResults.length} / ${results.length}` : results.length} {t.spins})
+                          ({isFiltered
+                            ? `${hits.length} / ${results.length}`
+                            : minesShowSafeOnly
+                            ? `${safeResults.length} / ${results.length}`
+                            : results.length} {t.spins})
                         </span>
                       )}
                       {hasCellSel && results.length > 0 && (
@@ -907,7 +915,6 @@ export default function Home() {
                         const isMinesGame = spin.result.type === "mines";
                         const v = isFiltered && !isMinesGame ? getSpinValue(spin.result) : null;
                         const isHit = isFiltered && v !== null && (isRoulette ? v === target : v >= target);
-                        const isMiss = isFiltered && !isHit;
                         /* mines with cell selection: determine safe/boom */
                         const minesAllSafe = isMinesGame && hasCellSel && !Array.from(selectedMinesCells).some(pos => new Set((spin.result as MinesResult).mines).has(pos));
                         const minesBoom = isMinesGame && hasCellSel && !minesAllSafe;
@@ -916,9 +923,8 @@ export default function Home() {
                             key={spin.nonce}
                             className={`px-4 py-3 flex items-start gap-4 transition-colors ${
                               minesAllSafe ? "bg-emerald-900/20 border-l-2 border-emerald-500"
-                              : minesBoom   ? "bg-red-900/20 border-l-2 border-red-600 opacity-60"
+                              : minesBoom   ? "bg-red-900/20 border-l-2 border-red-600"
                               : isHit       ? "bg-emerald-900/30 border-l-2 border-emerald-500"
-                              : isMiss      ? "opacity-40"
                               : ""
                             }`}
                           >
