@@ -84,6 +84,53 @@ const WHEEL_PAYOUTS: Record<string, Record<string, number[]>> = {
   },
 };
 
+const PLINKO_MULTIPLIERS: Record<string, Record<number, number[]>> = {
+  low: {
+    8:  [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
+    9:  [5.6, 2.0, 1.6, 1.0, 0.7, 0.7, 1.0, 1.6, 2.0, 5.6],
+    10: [8.9, 3.0, 1.4, 1.1, 1.0, 0.5, 1.0, 1.1, 1.4, 3.0, 8.9],
+    11: [8.4, 3.0, 1.9, 1.3, 1.0, 0.7, 0.7, 1.0, 1.3, 1.9, 3.0, 8.4],
+    12: [10,  3.0, 1.6, 1.4, 1.1, 1.0, 0.5, 1.0, 1.1, 1.4, 1.6, 3.0, 10],
+    13: [8.1, 4.0, 3.0, 1.9, 1.2, 0.9, 0.7, 0.7, 0.9, 1.2, 1.9, 3.0, 4.0, 8.1],
+    14: [7.1, 4.0, 1.9, 1.4, 1.3, 1.1, 1.0, 0.5, 1.0, 1.1, 1.3, 1.4, 1.9, 4.0, 7.1],
+    15: [15,  8.0, 3.0, 2.0, 1.5, 1.1, 1.0, 0.7, 0.7, 1.0, 1.1, 1.5, 2.0, 3.0, 8.0, 15],
+    16: [16,  9.0, 2.0, 1.4, 1.4, 1.2, 1.1, 1.0, 0.5, 1.0, 1.1, 1.2, 1.4, 1.4, 2.0, 9.0, 16],
+  },
+  medium: {
+    8:  [13,  3.0, 1.3, 0.7, 0.4, 0.7, 1.3, 3.0, 13],
+    9:  [18,  4.0, 1.7, 0.9, 0.5, 0.5, 0.9, 1.7, 4.0, 18],
+    10: [22,  5.0, 2.0, 1.4, 0.6, 0.4, 0.6, 1.4, 2.0, 5.0, 22],
+    11: [24,  6.0, 3.0, 1.8, 0.7, 0.5, 0.5, 0.7, 1.8, 3.0, 6.0, 24],
+    12: [33,  11,  4.0, 2.0, 1.1, 0.6, 0.3, 0.6, 1.1, 2.0, 4.0, 11,  33],
+    13: [43,  13,  6.0, 3.0, 1.3, 0.7, 0.4, 0.4, 0.7, 1.3, 3.0, 6.0, 13,  43],
+    14: [58,  15,  7.0, 4.0, 1.9, 1.0, 0.5, 0.2, 0.5, 1.0, 1.9, 4.0, 7.0, 15,  58],
+    15: [88,  18,  11,  5.0, 2.0, 1.0, 0.5, 0.3, 0.3, 0.5, 1.0, 2.0, 5.0, 11,  18,  88],
+    16: [110, 41,  10,  5.0, 3.0, 1.5, 1.0, 0.5, 0.3, 0.5, 1.0, 1.5, 3.0, 5.0, 10,  41,  110],
+  },
+  high: {
+    8:  [29,  4.0, 1.5, 0.3, 0.2, 0.3, 1.5, 4.0, 29],
+    9:  [43,  7.0, 2.0, 0.6, 0.2, 0.2, 0.6, 2.0, 7.0, 43],
+    10: [76,  10,  3.0, 0.9, 0.3, 0.2, 0.3, 0.9, 3.0, 10,  76],
+    11: [120, 14,  5.2, 1.4, 0.4, 0.2, 0.2, 0.4, 1.4, 5.2, 14,  120],
+    12: [170, 24,  8.1, 2.0, 0.7, 0.2, 0.2, 0.2, 0.7, 2.0, 8.1, 24,  170],
+    13: [260, 37,  11,  4.0, 1.0, 0.2, 0.2, 0.2, 1.0, 4.0, 11,  37,  260],
+    14: [420, 56,  18,  5.0, 1.9, 0.3, 0.2, 0.2, 0.3, 1.9, 5.0, 18,  56,  420],
+    15: [620, 83,  27,  8.0, 3.0, 0.5, 0.2, 0.2, 0.2, 0.5, 3.0, 8.0, 27,  83,  620],
+    16: [1000,130, 26,  9.0, 4.0, 2.0, 0.2, 0.2, 0.2, 2.0, 4.0, 9.0, 26,  130, 1000],
+  },
+  expert: {
+    8:  [76,  10,  3.0, 0.2, 0.1, 0.2, 3.0, 10,  76],
+    9:  [100, 17,  4.0, 0.2, 0.1, 0.1, 0.2, 4.0, 17,  100],
+    10: [200, 20,  6.5, 1.0, 0.2, 0.1, 0.2, 1.0, 6.5, 20,  200],
+    11: [330, 28,  10,  1.4, 0.5, 0.1, 0.1, 0.5, 1.4, 10,  28,  330],
+    12: [500, 37,  20,  3.0, 0.5, 0.1, 0.1, 0.1, 0.5, 3.0, 20,  37,  500],
+    13: [700, 65,  18,  8.0, 1.0, 0.5, 0.2, 0.2, 0.5, 1.0, 8.0, 18,  65,  700],
+    14: [900, 80,  22,  10,  3.0, 0.5, 0.1, 0.1, 0.5, 3.0, 10,  22,  80,  900],
+    15: [2000,200, 20,  10,  4.0, 1.0, 0.2, 0.1, 0.1, 0.2, 1.0, 4.0, 10,  20,  200, 2000],
+    16: [10000,130,26,  9.0, 4.0, 2.0, 0.2, 0.2, 0.2, 2.0, 4.0, 9.0, 26,  130, 10000],
+  },
+};
+
 export async function hmacSha256(serverSeed: string, message: string): Promise<Uint8Array> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -183,7 +230,7 @@ export interface LimboResult { type: "limbo"; multiplier: number }
 export interface WheelResult { type: "wheel"; payout: number; segment: number }
 export interface RouletteResult { type: "roulette"; pocket: number }
 export interface DiamondsResult { type: "diamonds"; gems: string[] }
-export interface PlinkoResult { type: "plinko"; path: string[]; slot: number }
+export interface PlinkoResult { type: "plinko"; path: string[]; slot: number; multiplier: number }
 export interface MinesResult { type: "mines"; mines: number[] }
 export interface KenoResult { type: "keno"; hits: number[] }
 export interface CardsResult { type: "cards"; cards: string[]; game: string }
@@ -200,7 +247,7 @@ export async function calculateGameResult(
   serverSeed: string,
   clientSeed: string,
   nonce: number,
-  options?: { wheelSegments?: string; wheelRisk?: string; plinkoRows?: number; mineCount?: number }
+  options?: { wheelSegments?: string; wheelRisk?: string; plinkoRows?: number; plinkoRisk?: string; mineCount?: number }
 ): Promise<GameResultData> {
   switch (game) {
     case "dice": {
@@ -237,10 +284,13 @@ export async function calculateGameResult(
     }
     case "plinko": {
       const rows = options?.plinkoRows || 16;
+      const risk = options?.plinkoRisk || "medium";
       const floats = await generateFloats(serverSeed, clientSeed, nonce, 0, rows);
       const path = floats.map((f) => (Math.floor(f * 2) === 0 ? "L" : "R"));
       const slot = path.filter((d) => d === "R").length;
-      return { type: "plinko", path, slot };
+      const mults = PLINKO_MULTIPLIERS[risk]?.[rows] || PLINKO_MULTIPLIERS["medium"][16];
+      const multiplier = mults[slot] ?? 0;
+      return { type: "plinko", path, slot, multiplier };
     }
     case "mines": {
       const floats = await generateFloats(serverSeed, clientSeed, nonce, 0, 24);

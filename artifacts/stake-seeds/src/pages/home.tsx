@@ -42,7 +42,7 @@ function getSpinValue(result: GameResultData): number | null {
     case "crash": return (result as CrashResult).multiplier;
     case "wheel": return (result as WheelResult).payout;
     case "roulette": return (result as RouletteResult).pocket;
-    case "plinko": return (result as PlinkoResult).slot;
+    case "plinko": return (result as PlinkoResult).multiplier;
     case "keno": return (result as KenoResult).hits.length;
     case "flip": return (result as FlipResult).flips.filter((f) => f === "Tura" || f === "Heads").length;
     case "snakes": return (result as SnakesResult).rolls.reduce((a, b) => a + b, 0);
@@ -55,7 +55,7 @@ function getTargetHintKey(game: string): keyof T {
   if (game === "limbo" || game === "crash") return "targetFilterHintMult";
   if (game === "wheel") return "targetFilterHintPayout";
   if (game === "roulette") return "targetFilterHintPocket";
-  if (game === "plinko") return "targetFilterHintSlot";
+  if (game === "plinko") return "targetFilterHintMult";
   if (game === "keno") return "targetFilterHintHits";
   if (game === "flip") return "targetFilterHintFlip";
   if (game === "snakes") return "targetFilterHintHits";
@@ -147,8 +147,11 @@ function ResultDisplay({ result, t, selectedMinesCells }: { result: GameResultDa
       const r = result as PlinkoResult;
       return (
         <div className="space-y-1">
-          <div className="text-emerald-400 font-bold">{t.slot}: {r.slot}</div>
-          <div className="text-xs text-slate-400 font-mono break-all">{r.path.join(" → ")}</div>
+          <div className="flex items-center gap-3">
+            <span className="text-emerald-400 font-bold text-lg">{r.multiplier}x</span>
+            <span className="text-slate-400 text-sm">{t.slot}: {r.slot}</span>
+          </div>
+          <div className="text-xs text-slate-500 font-mono break-all">{r.path.join(" → ")}</div>
         </div>
       );
     }
@@ -387,6 +390,7 @@ export default function Home() {
   const [wheelSegments, setWheelSegments] = useState("10");
   const [wheelRisk, setWheelRisk] = useState("medium");
   const [plinkoRows, setPlinkoRows] = useState(16);
+  const [plinkoRisk, setPlinkoRisk] = useState("medium");
   const [mineCount, setMineCount] = useState(3);
   const [selectedMinesCells, setSelectedMinesCells] = useState<Set<number>>(new Set());
   const [minesShowSafeOnly, setMinesShowSafeOnly] = useState(false);
@@ -410,6 +414,7 @@ export default function Home() {
           wheelSegments,
           wheelRisk,
           plinkoRows,
+          plinkoRisk,
           mineCount,
         });
         spinResults.push({ nonce: n, game: selectedGame, result });
@@ -418,7 +423,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [serverSeed, clientSeed, nonceStart, nonceCount, selectedGame, wheelSegments, wheelRisk, plinkoRows, mineCount]);
+  }, [serverSeed, clientSeed, nonceStart, nonceCount, selectedGame, wheelSegments, wheelRisk, plinkoRows, plinkoRisk, mineCount]);
 
   const hashSeed = useCallback(async () => {
     if (!serverSeed) return;
@@ -594,17 +599,32 @@ export default function Home() {
                 )}
 
                 {selectedGame === "plinko" && (
-                  <div>
-                    <label className="text-sm text-slate-400 block mb-1">{t.plinkoRows}</label>
-                    <select
-                      value={plinkoRows}
-                      onChange={(e) => setPlinkoRows(parseInt(e.target.value))}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
-                    >
-                      {Array.from({ length: 9 }, (_, i) => i + 8).map((n) => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm text-slate-400 block mb-1">{t.plinkoRisk}</label>
+                      <select
+                        value={plinkoRisk}
+                        onChange={(e) => setPlinkoRisk(e.target.value)}
+                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="low">{t.riskLow}</option>
+                        <option value="medium">{t.riskMedium}</option>
+                        <option value="high">{t.riskHigh}</option>
+                        <option value="expert">{t.riskExpert}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm text-slate-400 block mb-1">{t.plinkoRows}</label>
+                      <select
+                        value={plinkoRows}
+                        onChange={(e) => setPlinkoRows(parseInt(e.target.value))}
+                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                      >
+                        {Array.from({ length: 9 }, (_, i) => i + 8).map((n) => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
 
