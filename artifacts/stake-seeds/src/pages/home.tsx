@@ -154,19 +154,39 @@ function ResultDisplay({ result, t }: { result: GameResultData; t: T }) {
     }
     case "mines": {
       const r = result as MinesResult;
-      const grid = Array.from({ length: 25 }, (_, i) => i);
+      const mineSet = new Set(r.mines);
       return (
-        <div className="grid grid-cols-5 gap-1">
-          {grid.map((pos) => (
-            <div
-              key={pos}
-              className={`w-8 h-8 rounded text-xs flex items-center justify-center font-bold ${
-                r.mines.includes(pos) ? "bg-red-600 text-white" : "bg-slate-700 text-slate-400"
-              }`}
-            >
-              {r.mines.includes(pos) ? "💣" : pos + 1}
-            </div>
-          ))}
+        <div className="space-y-1.5 w-full">
+          <div className="flex gap-1.5 text-xs text-slate-400 mb-1">
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-3 h-3 rounded-sm bg-red-600"></span>
+              💣 {r.mines.length} mayın
+            </span>
+            <span className="flex items-center gap-1 ml-3">
+              <span className="inline-block w-3 h-3 rounded-sm bg-emerald-700"></span>
+              {25 - r.mines.length} güvenli
+            </span>
+          </div>
+          <div className="grid grid-cols-5 gap-1">
+            {Array.from({ length: 25 }, (_, i) => i).map((pos) => {
+              const isMine = mineSet.has(pos);
+              return (
+                <div
+                  key={pos}
+                  title={`Kare ${pos + 1}${isMine ? " — MAYINLI" : ""}`}
+                  className={`
+                    aspect-square rounded flex items-center justify-center text-base font-bold
+                    transition-colors select-none
+                    ${isMine
+                      ? "bg-red-700 border border-red-500 shadow shadow-red-900 text-white"
+                      : "bg-slate-700 border border-slate-600 text-emerald-400"}
+                  `}
+                >
+                  {isMine ? "💣" : "💎"}
+                </div>
+              );
+            })}
+          </div>
         </div>
       );
     }
