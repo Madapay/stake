@@ -296,6 +296,7 @@ export default function Home() {
   const [wheelRisk, setWheelRisk] = useState("medium");
   const [plinkoRows, setPlinkoRows] = useState(16);
   const [mineCount, setMineCount] = useState(3);
+  const [limboTarget, setLimboTarget] = useState<number | "">(2);
   const [results, setResults] = useState<SpinResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [serverSeedHash, setServerSeedHash] = useState("");
@@ -514,6 +515,31 @@ export default function Home() {
                   </div>
                 )}
 
+                {selectedGame === "limbo" && (
+                  <div>
+                    <label className="text-sm text-slate-400 block mb-1">Hedef Çarpan (ve üzeri)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={limboTarget}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "") setLimboTarget("");
+                          else setLimboTarget(Math.max(1.01, parseFloat(v) || 1.01));
+                        }}
+                        min={1.01}
+                        step={0.01}
+                        placeholder="örn: 1000"
+                        className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                      />
+                      <span className="text-slate-400 text-sm shrink-0">x ve üzeri</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Boş bırakırsanız tüm sonuçlar gösterilir
+                    </p>
+                  </div>
+                )}
+
                 <button
                   onClick={calculateAll}
                   disabled={loading || !serverSeed || !clientSeed}
@@ -524,31 +550,66 @@ export default function Home() {
               </div>
             </div>
 
-            {results.length > 0 && (
-              <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-                  <h2 className="font-semibold text-slate-200">
-                    Sonuçlar ({results.length} spin)
-                  </h2>
-                  <span className="text-sm text-slate-400">
-                    {GAMES[selectedGame].name} · Nonce {results[0].nonce} - {results[results.length - 1].nonce}
-                  </span>
-                </div>
-                <div className="divide-y divide-slate-700">
-                  {results.map((spin) => (
-                    <div key={spin.nonce} className="px-4 py-3 flex items-start gap-4">
-                      <div className="shrink-0 w-16">
-                        <div className="text-xs text-slate-500">Nonce</div>
-                        <div className="font-mono font-bold text-slate-300">{spin.nonce}</div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <ResultDisplay result={spin.result} />
-                      </div>
+            {results.length > 0 && (() => {
+              const isLimboFiltered = selectedGame === "limbo" && limboTarget !== "";
+              const target = typeof limboTarget === "number" ? limboTarget : 0;
+              const hits = isLimboFiltered
+                ? results.filter((s) => s.result.type === "limbo" && (s.result as LimboResult).multiplier >= target)
+                : [];
+              const displayResults = isLimboFiltered ? results : results;
+
+              return (
+                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
+                    <h2 className="font-semibold text-slate-200">
+                      Sonuçlar ({results.length} spin)
+                    </h2>
+                    <div className="flex items-center gap-3">
+                      {isLimboFiltered && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-400">
+                            <span className="font-bold text-yellow-400">{target}x</span> ve üzeri:
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-sm font-bold ${hits.length > 0 ? "bg-emerald-700 text-emerald-200" : "bg-slate-700 text-slate-400"}`}>
+                            {hits.length} / {results.length} isabet
+                          </span>
+                        </div>
+                      )}
+                      <span className="text-sm text-slate-400">
+                        {GAMES[selectedGame].name} · Nonce {results[0].nonce} - {results[results.length - 1].nonce}
+                      </span>
                     </div>
-                  ))}
+                  </div>
+                  <div className="divide-y divide-slate-700">
+                    {displayResults.map((spin) => {
+                      const isHit = isLimboFiltered && spin.result.type === "limbo" && (spin.result as LimboResult).multiplier >= target;
+                      const isMiss = isLimboFiltered && !isHit;
+                      return (
+                        <div
+                          key={spin.nonce}
+                          className={`px-4 py-3 flex items-start gap-4 transition-colors ${
+                            isHit ? "bg-emerald-900/30 border-l-2 border-emerald-500" : isMiss ? "opacity-40" : ""
+                          }`}
+                        >
+                          <div className="shrink-0 w-16">
+                            <div className="text-xs text-slate-500">Nonce</div>
+                            <div className={`font-mono font-bold ${isHit ? "text-emerald-300" : "text-slate-300"}`}>{spin.nonce}</div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <ResultDisplay result={spin.result} />
+                          </div>
+                          {isHit && (
+                            <div className="shrink-0">
+                              <span className="text-xs bg-emerald-700 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">✓ İsabet</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {results.length === 0 && !loading && (
               <div className="text-center py-16 text-slate-500">
