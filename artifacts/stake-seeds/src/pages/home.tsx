@@ -23,8 +23,9 @@ import {
   ChickenResult,
   PumpResult,
 } from "@/lib/provably-fair";
+import { Lang, T, translations } from "@/lib/i18n";
 
-const ROULETTE_COLORS: Record<number, string> = {
+const ROULETTE_COLORS: Record<number, "red" | "black" | "green"> = {
   0: "green",
   1: "red", 2: "black", 3: "red", 4: "black", 5: "red", 6: "black",
   7: "red", 8: "black", 9: "red", 10: "black", 11: "black", 12: "red",
@@ -34,7 +35,7 @@ const ROULETTE_COLORS: Record<number, string> = {
   31: "black", 32: "red", 33: "black", 34: "red", 35: "black", 36: "red",
 };
 
-function ResultDisplay({ result }: { result: GameResultData }) {
+function ResultDisplay({ result, t }: { result: GameResultData; t: T }) {
   switch (result.type) {
     case "dice": {
       const r = result as DiceResult;
@@ -73,6 +74,7 @@ function ResultDisplay({ result }: { result: GameResultData }) {
     case "roulette": {
       const r = result as RouletteResult;
       const color = ROULETTE_COLORS[r.pocket];
+      const colorLabel = t[color as "red" | "black" | "green"];
       return (
         <div className="flex items-center gap-3">
           <div
@@ -82,28 +84,35 @@ function ResultDisplay({ result }: { result: GameResultData }) {
           >
             {r.pocket}
           </div>
-          <div className="capitalize text-slate-300">{color}</div>
+          <div className="capitalize text-slate-300">{colorLabel}</div>
         </div>
       );
     }
     case "diamonds": {
       const r = result as DiamondsResult;
+      const gemKey: Record<string, keyof T> = {
+        Yeşil: "gemGreen", Green: "gemGreen",
+        Mor: "gemPurple", Purple: "gemPurple",
+        Sarı: "gemYellow", Yellow: "gemYellow",
+        Kırmızı: "gemRed", Red: "gemRed",
+        Cyan: "gemCyan",
+        Pembe: "gemPink", Pink: "gemPink",
+        Mavi: "gemBlue", Blue: "gemBlue",
+      };
       const gemColors: Record<string, string> = {
-        Yeşil: "text-emerald-400",
-        Mor: "text-purple-400",
-        Sarı: "text-yellow-400",
-        Kırmızı: "text-red-400",
-        Cyan: "text-cyan-400",
-        Pembe: "text-pink-400",
-        Mavi: "text-blue-400",
+        gemGreen: "text-emerald-400", gemPurple: "text-purple-400", gemYellow: "text-yellow-400",
+        gemRed: "text-red-400", gemCyan: "text-cyan-400", gemPink: "text-pink-400", gemBlue: "text-blue-400",
       };
       return (
         <div className="flex gap-2 flex-wrap">
-          {r.gems.map((gem, i) => (
-            <span key={i} className={`font-semibold ${gemColors[gem] || "text-white"} text-sm bg-slate-700 px-2 py-1 rounded`}>
-              ♦ {gem}
-            </span>
-          ))}
+          {r.gems.map((gem, i) => {
+            const key = gemKey[gem] || "gemBlue";
+            return (
+              <span key={i} className={`font-semibold ${gemColors[key] || "text-white"} text-sm bg-slate-700 px-2 py-1 rounded`}>
+                ♦ {t[key as keyof T] as string}
+              </span>
+            );
+          })}
         </div>
       );
     }
@@ -111,7 +120,7 @@ function ResultDisplay({ result }: { result: GameResultData }) {
       const r = result as PlinkoResult;
       return (
         <div className="space-y-1">
-          <div className="text-emerald-400 font-bold">Slot: {r.slot}</div>
+          <div className="text-emerald-400 font-bold">{t.slot}: {r.slot}</div>
           <div className="text-xs text-slate-400 font-mono break-all">{r.path.join(" → ")}</div>
         </div>
       );
@@ -125,9 +134,7 @@ function ResultDisplay({ result }: { result: GameResultData }) {
             <div
               key={pos}
               className={`w-8 h-8 rounded text-xs flex items-center justify-center font-bold ${
-                r.mines.includes(pos)
-                  ? "bg-red-600 text-white"
-                  : "bg-slate-700 text-slate-400"
+                r.mines.includes(pos) ? "bg-red-600 text-white" : "bg-slate-700 text-slate-400"
               }`}
             >
               {r.mines.includes(pos) ? "💣" : pos + 1}
@@ -140,7 +147,7 @@ function ResultDisplay({ result }: { result: GameResultData }) {
       const r = result as PumpResult;
       return (
         <div className="space-y-1">
-          <div className="text-sm text-slate-400">Pop sırası:</div>
+          <div className="text-sm text-slate-400">{t.popOrder}</div>
           <div className="flex gap-1 flex-wrap">
             {r.pops.slice(0, 24).map((pos, i) => (
               <span key={i} className="text-xs bg-slate-700 text-orange-400 px-1.5 py-0.5 rounded font-mono">
@@ -155,7 +162,7 @@ function ResultDisplay({ result }: { result: GameResultData }) {
       const r = result as ChickenResult;
       return (
         <div className="space-y-1">
-          <div className="text-sm text-slate-400">Ölüm pozisyonları:</div>
+          <div className="text-sm text-slate-400">{t.deathPositions}</div>
           <div className="flex gap-1 flex-wrap">
             {r.deaths.slice(0, 20).map((pos, i) => (
               <span key={i} className="text-xs bg-slate-700 text-red-400 px-1.5 py-0.5 rounded font-mono">
@@ -175,9 +182,7 @@ function ResultDisplay({ result }: { result: GameResultData }) {
             <div
               key={n}
               className={`w-7 h-7 rounded text-xs flex items-center justify-center font-bold ${
-                r.hits.includes(n)
-                  ? "bg-yellow-500 text-slate-900"
-                  : "bg-slate-700 text-slate-400"
+                r.hits.includes(n) ? "bg-yellow-500 text-slate-900" : "bg-slate-700 text-slate-400"
               }`}
             >
               {n}
@@ -193,10 +198,7 @@ function ResultDisplay({ result }: { result: GameResultData }) {
           {r.cards.map((card, i) => {
             const isRed = card.startsWith("♦") || card.startsWith("♥");
             return (
-              <span
-                key={i}
-                className={`text-sm font-bold bg-white px-1.5 py-0.5 rounded shadow ${isRed ? "text-red-600" : "text-slate-900"}`}
-              >
+              <span key={i} className={`text-sm font-bold bg-white px-1.5 py-0.5 rounded shadow ${isRed ? "text-red-600" : "text-slate-900"}`}>
                 {card}
               </span>
             );
@@ -211,10 +213,7 @@ function ResultDisplay({ result }: { result: GameResultData }) {
           {r.cards.map((card, i) => {
             const isRed = card.startsWith("♦") || card.startsWith("♥");
             return (
-              <span
-                key={i}
-                className={`text-sm font-bold bg-white px-1.5 py-0.5 rounded shadow ${isRed ? "text-red-600" : "text-slate-900"}`}
-              >
+              <span key={i} className={`text-sm font-bold bg-white px-1.5 py-0.5 rounded shadow ${isRed ? "text-red-600" : "text-slate-900"}`}>
                 {card}
               </span>
             );
@@ -224,23 +223,23 @@ function ResultDisplay({ result }: { result: GameResultData }) {
     }
     case "flip": {
       const r = result as FlipResult;
-      const heads = r.flips.filter((f) => f === "Tura").length;
+      const headsCount = r.flips.filter((f) => f === "Tura" || f === "Heads").length;
       return (
         <div className="space-y-1">
           <div className="text-sm">
-            <span className="text-emerald-400 font-bold">{heads} Tura</span>
+            <span className="text-emerald-400 font-bold">{headsCount} {t.heads}</span>
             <span className="text-slate-400"> / </span>
-            <span className="text-slate-300 font-bold">{r.flips.length - heads} Yazı</span>
+            <span className="text-slate-300 font-bold">{r.flips.length - headsCount} {t.tails}</span>
           </div>
           <div className="flex gap-0.5 flex-wrap">
-            {r.flips.map((f, i) => (
-              <span
-                key={i}
-                className={`text-xs px-1 py-0.5 rounded font-mono ${f === "Tura" ? "bg-emerald-700 text-emerald-200" : "bg-slate-600 text-slate-300"}`}
-              >
-                {f[0]}
-              </span>
-            ))}
+            {r.flips.map((f, i) => {
+              const isHeads = f === "Tura" || f === "Heads";
+              return (
+                <span key={i} className={`text-xs px-1 py-0.5 rounded font-mono ${isHeads ? "bg-emerald-700 text-emerald-200" : "bg-slate-600 text-slate-300"}`}>
+                  {isHeads ? t.heads[0] : t.tails[0]}
+                </span>
+              );
+            })}
           </div>
         </div>
       );
@@ -255,11 +254,9 @@ function ResultDisplay({ result }: { result: GameResultData }) {
         <div className="space-y-1">
           {pairs.map((pair, i) => (
             <div key={i} className="flex items-center gap-2">
-              <span className="text-slate-400 text-sm">Tur {i + 1}:</span>
+              <span className="text-slate-400 text-sm">{t.round} {i + 1}:</span>
               {pair.map((roll, j) => (
-                <span key={j} className="bg-slate-700 text-white text-sm font-bold px-2 py-0.5 rounded">
-                  🎲 {roll}
-                </span>
+                <span key={j} className="bg-slate-700 text-white text-sm font-bold px-2 py-0.5 rounded">🎲 {roll}</span>
               ))}
               <span className="text-emerald-400 text-sm font-semibold">= {pair.reduce((a, b) => a + b, 0)}</span>
             </div>
@@ -269,24 +266,28 @@ function ResultDisplay({ result }: { result: GameResultData }) {
     }
     case "rock-paper-scissors": {
       const r = result as RockPaperScissorsResult;
-      const icons: Record<string, string> = { Taş: "🪨", Kağıt: "📄", Makas: "✂️" };
+      const icons: Record<string, string> = { Taş: "🪨", Rock: "🪨", Kağıt: "📄", Paper: "📄", Makas: "✂️", Scissors: "✂️" };
+      const labelMap: Record<string, keyof T> = { Taş: "rock", Rock: "rock", Kağıt: "paper", Paper: "paper", Makas: "scissors", Scissors: "scissors" };
       return (
         <div className="flex gap-2 flex-wrap">
           {r.choices.map((c, i) => (
             <div key={i} className="flex flex-col items-center bg-slate-700 rounded px-2 py-1">
               <span className="text-lg">{icons[c]}</span>
-              <span className="text-xs text-slate-400">{c}</span>
+              <span className="text-xs text-slate-400">{t[labelMap[c] as keyof T] as string}</span>
             </div>
           ))}
         </div>
       );
     }
     default:
-      return <div className="text-slate-400">Bilinmeyen oyun</div>;
+      return <div className="text-slate-400">—</div>;
   }
 }
 
 export default function Home() {
+  const [lang, setLang] = useState<Lang>("tr");
+  const t = translations[lang];
+
   const [serverSeed, setServerSeed] = useState("");
   const [clientSeed, setClientSeed] = useState("");
   const [nonceStart, setNonceStart] = useState(1);
@@ -340,13 +341,31 @@ export default function Home() {
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans">
       <header className="border-b border-slate-700 bg-slate-800/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 font-black text-sm">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 font-black text-sm shrink-0">
               PF
             </div>
-            <h1 className="font-bold text-lg">Provably Fair Hesaplayıcı</h1>
+            <h1 className="font-bold text-lg truncate">{t.appTitle}</h1>
+            <span className="text-slate-400 text-sm hidden sm:block">{t.appSubtitle}</span>
           </div>
-          <span className="text-slate-400 text-sm hidden sm:block">Stake.com algoritması</span>
+          <div className="shrink-0 flex items-center gap-1 bg-slate-700 rounded-lg p-0.5">
+            <button
+              onClick={() => setLang("tr")}
+              className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+                lang === "tr" ? "bg-slate-900 text-white shadow" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              🇹🇷 TR
+            </button>
+            <button
+              onClick={() => setLang("en")}
+              className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+                lang === "en" ? "bg-slate-900 text-white shadow" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              🇬🇧 EN
+            </button>
+          </div>
         </div>
       </header>
 
@@ -355,22 +374,18 @@ export default function Home() {
           <button
             onClick={() => setActiveTab("calculator")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === "calculator"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              activeTab === "calculator" ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
           >
-            Spin Hesaplayıcı
+            {t.tabCalculator}
           </button>
           <button
             onClick={() => setActiveTab("verifier")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === "verifier"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              activeTab === "verifier" ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
           >
-            Seed Doğrulayıcı
+            {t.tabVerifier}
           </button>
         </div>
 
@@ -378,44 +393,41 @@ export default function Home() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-slate-800 rounded-xl p-4 space-y-4 border border-slate-700">
-                <h2 className="font-semibold text-slate-200">Seed Bilgileri</h2>
+                <h2 className="font-semibold text-slate-200">{t.seedInfo}</h2>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm text-slate-400 block mb-1">Server Seed</label>
+                    <label className="text-sm text-slate-400 block mb-1">{t.serverSeed}</label>
                     <input
                       type="text"
                       value={serverSeed}
                       onChange={(e) => setServerSeed(e.target.value)}
-                      placeholder="Server seed girin..."
+                      placeholder={t.serverSeedPlaceholder}
                       className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
                     />
                     {serverSeed && (
-                      <button
-                        onClick={hashSeed}
-                        className="mt-1 text-xs text-emerald-400 hover:text-emerald-300"
-                      >
-                        SHA256 Hash Oluştur
+                      <button onClick={hashSeed} className="mt-1 text-xs text-emerald-400 hover:text-emerald-300">
+                        {t.generateHash}
                       </button>
                     )}
                     {serverSeedHash && (
                       <p className="text-xs text-slate-400 mt-1 font-mono break-all">
-                        Hash: {serverSeedHash}
+                        {t.hashLabel} {serverSeedHash}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-sm text-slate-400 block mb-1">Client Seed</label>
+                    <label className="text-sm text-slate-400 block mb-1">{t.clientSeed}</label>
                     <input
                       type="text"
                       value={clientSeed}
                       onChange={(e) => setClientSeed(e.target.value)}
-                      placeholder="Client seed girin..."
+                      placeholder={t.clientSeedPlaceholder}
                       className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-slate-400 block mb-1">Başlangıç Nonce</label>
+                      <label className="text-sm text-slate-400 block mb-1">{t.startNonce}</label>
                       <input
                         type="number"
                         value={nonceStart}
@@ -425,7 +437,7 @@ export default function Home() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-slate-400 block mb-1">Spin Sayısı</label>
+                      <label className="text-sm text-slate-400 block mb-1">{t.spinCount}</label>
                       <input
                         type="number"
                         value={nonceCount}
@@ -440,18 +452,16 @@ export default function Home() {
               </div>
 
               <div className="bg-slate-800 rounded-xl p-4 space-y-4 border border-slate-700">
-                <h2 className="font-semibold text-slate-200">Oyun Seçimi</h2>
+                <h2 className="font-semibold text-slate-200">{t.gameSelect}</h2>
                 <div>
-                  <label className="text-sm text-slate-400 block mb-1">Oyun</label>
+                  <label className="text-sm text-slate-400 block mb-1">{t.game}</label>
                   <select
                     value={selectedGame}
                     onChange={(e) => setSelectedGame(e.target.value as GameType)}
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
                   >
                     {Object.entries(GAMES).map(([key, g]) => (
-                      <option key={key} value={key}>
-                        {g.name}
-                      </option>
+                      <option key={key} value={key}>{g.name}</option>
                     ))}
                   </select>
                   <p className="text-xs text-slate-500 mt-1">{GAMES[selectedGame].description}</p>
@@ -460,7 +470,7 @@ export default function Home() {
                 {selectedGame === "wheel" && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-slate-400 block mb-1">Segment Sayısı</label>
+                      <label className="text-sm text-slate-400 block mb-1">{t.wheelSegments}</label>
                       <select
                         value={wheelSegments}
                         onChange={(e) => setWheelSegments(e.target.value)}
@@ -472,15 +482,15 @@ export default function Home() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm text-slate-400 block mb-1">Risk</label>
+                      <label className="text-sm text-slate-400 block mb-1">{t.wheelRisk}</label>
                       <select
                         value={wheelRisk}
                         onChange={(e) => setWheelRisk(e.target.value)}
                         className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
                       >
-                        <option value="low">Düşük</option>
-                        <option value="medium">Orta</option>
-                        <option value="high">Yüksek</option>
+                        <option value="low">{t.riskLow}</option>
+                        <option value="medium">{t.riskMedium}</option>
+                        <option value="high">{t.riskHigh}</option>
                       </select>
                     </div>
                   </div>
@@ -488,7 +498,7 @@ export default function Home() {
 
                 {selectedGame === "plinko" && (
                   <div>
-                    <label className="text-sm text-slate-400 block mb-1">Pin Sayısı</label>
+                    <label className="text-sm text-slate-400 block mb-1">{t.plinkoRows}</label>
                     <select
                       value={plinkoRows}
                       onChange={(e) => setPlinkoRows(parseInt(e.target.value))}
@@ -503,7 +513,7 @@ export default function Home() {
 
                 {selectedGame === "mines" && (
                   <div>
-                    <label className="text-sm text-slate-400 block mb-1">Mayın Sayısı (1-24)</label>
+                    <label className="text-sm text-slate-400 block mb-1">{t.mineCount}</label>
                     <input
                       type="number"
                       value={mineCount}
@@ -517,7 +527,7 @@ export default function Home() {
 
                 {selectedGame === "limbo" && (
                   <div>
-                    <label className="text-sm text-slate-400 block mb-1">Hedef Çarpan (ve üzeri)</label>
+                    <label className="text-sm text-slate-400 block mb-1">{t.limboTarget}</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -529,14 +539,12 @@ export default function Home() {
                         }}
                         min={1.01}
                         step={0.01}
-                        placeholder="örn: 1000"
+                        placeholder={t.limboTargetPlaceholder}
                         className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                       />
-                      <span className="text-slate-400 text-sm shrink-0">x ve üzeri</span>
+                      <span className="text-slate-400 text-sm shrink-0">{t.limboTargetSuffix}</span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Boş bırakırsanız tüm sonuçlar gösterilir
-                    </p>
+                    <p className="text-xs text-slate-500 mt-1">{t.limboTargetHint}</p>
                   </div>
                 )}
 
@@ -545,7 +553,7 @@ export default function Home() {
                   disabled={loading || !serverSeed || !clientSeed}
                   className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors"
                 >
-                  {loading ? "Hesaplanıyor..." : "Hesapla"}
+                  {loading ? t.calculating : t.calcButton}
                 </button>
               </div>
             </div>
@@ -556,22 +564,21 @@ export default function Home() {
               const hits = isLimboFiltered
                 ? results.filter((s) => s.result.type === "limbo" && (s.result as LimboResult).multiplier >= target)
                 : [];
-              const displayResults = isLimboFiltered ? results : results;
 
               return (
                 <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                   <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
                     <h2 className="font-semibold text-slate-200">
-                      Sonuçlar ({results.length} spin)
+                      {t.resultsTitle} ({results.length} {t.spins})
                     </h2>
                     <div className="flex items-center gap-3">
                       {isLimboFiltered && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-slate-400">
-                            <span className="font-bold text-yellow-400">{target}x</span> ve üzeri:
+                            <span className="font-bold text-yellow-400">{target}x</span> {t.andAbove}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-sm font-bold ${hits.length > 0 ? "bg-emerald-700 text-emerald-200" : "bg-slate-700 text-slate-400"}`}>
-                            {hits.length} / {results.length} isabet
+                            {hits.length} / {results.length} {t.hits}
                           </span>
                         </div>
                       )}
@@ -581,7 +588,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="divide-y divide-slate-700">
-                    {displayResults.map((spin) => {
+                    {results.map((spin) => {
                       const isHit = isLimboFiltered && spin.result.type === "limbo" && (spin.result as LimboResult).multiplier >= target;
                       const isMiss = isLimboFiltered && !isHit;
                       return (
@@ -592,15 +599,15 @@ export default function Home() {
                           }`}
                         >
                           <div className="shrink-0 w-16">
-                            <div className="text-xs text-slate-500">Nonce</div>
+                            <div className="text-xs text-slate-500">{t.nonce}</div>
                             <div className={`font-mono font-bold ${isHit ? "text-emerald-300" : "text-slate-300"}`}>{spin.nonce}</div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <ResultDisplay result={spin.result} />
+                            <ResultDisplay result={spin.result} t={t} />
                           </div>
                           {isHit && (
                             <div className="shrink-0">
-                              <span className="text-xs bg-emerald-700 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">✓ İsabet</span>
+                              <span className="text-xs bg-emerald-700 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">{t.hitBadge}</span>
                             </div>
                           )}
                         </div>
@@ -614,26 +621,23 @@ export default function Home() {
             {results.length === 0 && !loading && (
               <div className="text-center py-16 text-slate-500">
                 <div className="text-4xl mb-3">🎲</div>
-                <p className="text-lg font-medium">Sonuç yok</p>
-                <p className="text-sm mt-1">Seed bilgilerini girin ve hesapla butonuna basın</p>
+                <p className="text-lg font-medium">{t.noResults}</p>
+                <p className="text-sm mt-1">{t.noResultsHint}</p>
               </div>
             )}
           </>
         ) : (
           <div className="space-y-4">
             <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 space-y-4">
-              <h2 className="font-semibold text-slate-200">Server Seed Hash Doğrulama</h2>
-              <p className="text-sm text-slate-400">
-                Stake, bahis yapmadan önce server seed'in SHA256 hash'ini gösterir. Seed'iniz açıklandıktan sonra,
-                bu seed'in hash'ini hesaplayarak doğrulayabilirsiniz.
-              </p>
+              <h2 className="font-semibold text-slate-200">{t.verifierTitle}</h2>
+              <p className="text-sm text-slate-400">{t.verifierDesc}</p>
               <div>
-                <label className="text-sm text-slate-400 block mb-1">Açıklanmış Server Seed</label>
+                <label className="text-sm text-slate-400 block mb-1">{t.unhashedSeed}</label>
                 <input
                   type="text"
                   value={hashInput}
                   onChange={(e) => setHashInput(e.target.value)}
-                  placeholder="Açıklanmış server seed'i girin..."
+                  placeholder={t.unhashedSeedPlaceholder}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
                 />
               </div>
@@ -642,38 +646,28 @@ export default function Home() {
                 disabled={!hashInput}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors"
               >
-                Hash Hesapla
+                {t.calcHashButton}
               </button>
               {verifiedHash && (
                 <div className="bg-slate-700 rounded-lg p-3">
-                  <p className="text-xs text-slate-400 mb-1">SHA256 Hash:</p>
+                  <p className="text-xs text-slate-400 mb-1">{t.sha256HashLabel}</p>
                   <p className="font-mono text-emerald-400 text-sm break-all">{verifiedHash}</p>
-                  <p className="text-xs text-slate-400 mt-2">
-                    Bu değeri Stake'te gösterilen hash ile karşılaştırın. Eşleşiyorsa, seed gerçektir.
-                  </p>
+                  <p className="text-xs text-slate-400 mt-2">{t.verifierCompareTip}</p>
                 </div>
               )}
             </div>
 
             <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 space-y-3">
-              <h2 className="font-semibold text-slate-200">Nasıl Çalışır?</h2>
+              <h2 className="font-semibold text-slate-200">{t.howItWorks}</h2>
               <div className="space-y-3 text-sm text-slate-400">
-                <div className="flex gap-3">
-                  <span className="shrink-0 w-6 h-6 bg-emerald-700 rounded-full text-emerald-200 flex items-center justify-center text-xs font-bold">1</span>
-                  <p>Stake, bahis yapmadan önce server seed'in SHA256 hash'ini gösterir. Bu, server seed'in değiştirilemeyeceğini garanti eder.</p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="shrink-0 w-6 h-6 bg-emerald-700 rounded-full text-emerald-200 flex items-center justify-center text-xs font-bold">2</span>
-                  <p>Her bahis, server seed + client seed + nonce kombinasyonuyla HMAC-SHA256 kullanılarak hesaplanır.</p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="shrink-0 w-6 h-6 bg-emerald-700 rounded-full text-emerald-200 flex items-center justify-center text-xs font-bold">3</span>
-                  <p>Seed rotasyonu yaptıktan sonra, açıklanan server seed'in hash'ini hesaplayarak eşleştiğini doğrulayabilirsiniz.</p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="shrink-0 w-6 h-6 bg-emerald-700 rounded-full text-emerald-200 flex items-center justify-center text-xs font-bold">4</span>
-                  <p>Doğrulama tamamdır: açıklanan server seed → SHA256 → gösterilen hash ile eşleşmeli.</p>
-                </div>
+                {[t.howStep1, t.howStep2, t.howStep3, t.howStep4].map((step, i) => (
+                  <div key={i} className="flex gap-3">
+                    <span className="shrink-0 w-6 h-6 bg-emerald-700 rounded-full text-emerald-200 flex items-center justify-center text-xs font-bold">
+                      {i + 1}
+                    </span>
+                    <p>{step}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
