@@ -609,82 +609,82 @@ export default function Home() {
               </div>
             </div>
 
-            {results.length > 0 && (() => {
+            {/* ── LIMBO: always-visible table ── */}
+            {selectedGame === "limbo" && (() => {
               const isFiltered = targetFilter !== "";
               const target = typeof targetFilter === "number" ? targetFilter : 0;
-              const isRoulette = selectedGame === "roulette";
-              const isLimbo = selectedGame === "limbo";
+              const limboResults = results.filter((s) => s.result.type === "limbo") as SpinResult[];
+              const hits = isFiltered ? limboResults.filter((s) => (s.result as LimboResult).multiplier >= target) : [];
+              const rows = [...limboResults].sort((a, b) => {
+                if (limboSort === "multiplier") {
+                  return (b.result as LimboResult).multiplier - (a.result as LimboResult).multiplier;
+                }
+                return a.nonce - b.nonce;
+              });
 
-              const hits = isFiltered
-                ? results.filter((s) => {
-                    const v = getSpinValue(s.result);
-                    if (v === null) return false;
-                    return isRoulette ? v === target : v >= target;
-                  })
-                : [];
-
-              /* ── LIMBO: special compact table view ── */
-              if (isLimbo) {
-                const rows = [...results].sort((a, b) => {
-                  if (limboSort === "multiplier") {
-                    const ma = (a.result as LimboResult).multiplier;
-                    const mb = (b.result as LimboResult).multiplier;
-                    return mb - ma;
-                  }
-                  return a.nonce - b.nonce;
-                });
-
-                return (
-                  <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                    {/* header */}
-                    <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
-                      <h2 className="font-semibold text-slate-200">
-                        {t.resultsTitle} ({results.length} {t.spins})
-                        {isFiltered && (
-                          <span className={`ml-3 px-2 py-0.5 rounded-full text-sm font-bold ${hits.length > 0 ? "bg-emerald-700 text-emerald-200" : "bg-slate-700 text-slate-400"}`}>
-                            {hits.length} / {results.length} {t.hits} ≥ {target}x
-                          </span>
-                        )}
-                      </h2>
-                      {/* sort toggles */}
-                      <div className="flex items-center gap-4">
-                        <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm">
-                          <input
-                            type="checkbox"
-                            checked={limboSort === "nonce"}
-                            onChange={() => setLimboSort("nonce")}
-                            className="accent-emerald-500 w-4 h-4"
-                          />
-                          <span className={limboSort === "nonce" ? "text-emerald-400 font-semibold" : "text-slate-400"}>
-                            {t.sortByNonce}
-                          </span>
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm">
-                          <input
-                            type="checkbox"
-                            checked={limboSort === "multiplier"}
-                            onChange={() => setLimboSort("multiplier")}
-                            className="accent-yellow-400 w-4 h-4"
-                          />
-                          <span className={limboSort === "multiplier" ? "text-yellow-400 font-semibold" : "text-slate-400"}>
-                            {t.sortByMultiplier}
-                          </span>
-                        </label>
-                      </div>
+              return (
+                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                  {/* header */}
+                  <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
+                    <h2 className="font-semibold text-slate-200">
+                      {t.resultsTitle}
+                      {limboResults.length > 0 && (
+                        <span className="ml-2 text-slate-400 font-normal text-sm">({limboResults.length} {t.spins})</span>
+                      )}
+                      {isFiltered && limboResults.length > 0 && (
+                        <span className={`ml-3 px-2 py-0.5 rounded-full text-sm font-bold ${hits.length > 0 ? "bg-emerald-700 text-emerald-200" : "bg-slate-700 text-slate-400"}`}>
+                          {hits.length} / {limboResults.length} {t.hits} ≥ {target}x
+                        </span>
+                      )}
+                    </h2>
+                    {/* sort toggles */}
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm">
+                        <input
+                          type="checkbox"
+                          checked={limboSort === "nonce"}
+                          onChange={() => setLimboSort("nonce")}
+                          className="accent-emerald-500 w-4 h-4"
+                        />
+                        <span className={limboSort === "nonce" ? "text-emerald-400 font-semibold" : "text-slate-400"}>
+                          {t.sortByNonce}
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm">
+                        <input
+                          type="checkbox"
+                          checked={limboSort === "multiplier"}
+                          onChange={() => setLimboSort("multiplier")}
+                          className="accent-yellow-400 w-4 h-4"
+                        />
+                        <span className={limboSort === "multiplier" ? "text-yellow-400 font-semibold" : "text-slate-400"}>
+                          {t.sortByMultiplier}
+                        </span>
+                      </label>
                     </div>
+                  </div>
 
-                    {/* table */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-slate-700 bg-slate-900/50">
-                            <th className="px-4 py-2 text-left text-slate-400 font-semibold w-12">{t.colIndex}</th>
-                            <th className="px-4 py-2 text-left text-slate-400 font-semibold">{t.colNonce}</th>
-                            <th className="px-4 py-2 text-left text-slate-400 font-semibold">{t.colMultiplier}</th>
+                  {/* table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-700 bg-slate-900/60">
+                          <th className="px-4 py-2.5 text-left text-slate-400 font-semibold w-12">{t.colIndex}</th>
+                          <th className="px-4 py-2.5 text-left text-slate-400 font-semibold">{t.colNonce}</th>
+                          <th className="px-4 py-2.5 text-left text-slate-400 font-semibold">{t.colMultiplier}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700/50">
+                        {rows.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-12 text-center text-slate-500">
+                              <div className="text-3xl mb-2">🎯</div>
+                              <p>{t.noResults}</p>
+                              <p className="text-xs mt-1 text-slate-600">{t.noResultsHint}</p>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-700/50">
-                          {rows.map((spin, idx) => {
+                        ) : (
+                          rows.map((spin, idx) => {
                             const mult = (spin.result as LimboResult).multiplier;
                             const isHit = isFiltered && mult >= target;
                             const isMiss = isFiltered && !isHit;
@@ -693,35 +693,48 @@ export default function Home() {
                                 key={spin.nonce}
                                 className={`transition-colors ${
                                   isHit
-                                    ? "bg-emerald-900/20 border-l-2 border-emerald-500"
+                                    ? "bg-emerald-900/20 border-l-2 border-l-emerald-500"
                                     : isMiss
-                                    ? "opacity-35"
+                                    ? "opacity-30"
                                     : "hover:bg-slate-700/30"
                                 }`}
                               >
-                                <td className="px-4 py-2 text-slate-500 font-mono text-xs">{idx + 1}</td>
-                                <td className="px-4 py-2 font-mono font-bold text-slate-300">{spin.nonce}</td>
-                                <td className={`px-4 py-2 font-mono font-bold text-lg ${
+                                <td className="px-4 py-2.5 text-slate-500 font-mono text-xs">{idx + 1}</td>
+                                <td className="px-4 py-2.5 font-mono font-bold text-slate-300">{spin.nonce}</td>
+                                <td className={`px-4 py-2.5 font-mono font-bold text-base ${
                                   isHit ? "text-emerald-400" : mult >= 2 ? "text-yellow-400" : "text-slate-300"
                                 }`}>
                                   {mult.toFixed(2)}x
                                   {isHit && (
-                                    <span className="ml-2 text-xs bg-emerald-700 text-emerald-200 px-1.5 py-0.5 rounded-full font-normal">
+                                    <span className="ml-2 text-xs bg-emerald-700 text-emerald-200 px-1.5 py-0.5 rounded-full font-normal align-middle">
                                       {t.hitBadge}
                                     </span>
                                   )}
                                 </td>
                               </tr>
                             );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-                );
-              }
+                </div>
+              );
+            })()}
 
-              /* ── Other games: generic card list ── */
+            {/* ── Other games: generic card list ── */}
+            {results.length > 0 && selectedGame !== "limbo" && (() => {
+              const isFiltered = targetFilter !== "";
+              const target = typeof targetFilter === "number" ? targetFilter : 0;
+              const isRoulette = selectedGame === "roulette";
+              const hits = isFiltered
+                ? results.filter((s) => {
+                    const v = getSpinValue(s.result);
+                    if (v === null) return false;
+                    return isRoulette ? v === target : v >= target;
+                  })
+                : [];
+
               return (
                 <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                   <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
@@ -777,7 +790,7 @@ export default function Home() {
               );
             })()}
 
-            {results.length === 0 && !loading && (
+            {results.length === 0 && !loading && selectedGame !== "limbo" && (
               <div className="text-center py-16 text-slate-500">
                 <div className="text-4xl mb-3">🎲</div>
                 <p className="text-lg font-medium">{t.noResults}</p>
