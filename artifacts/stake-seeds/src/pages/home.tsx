@@ -722,8 +722,8 @@ export default function Home() {
               );
             })()}
 
-            {/* ── Other games: generic card list ── */}
-            {results.length > 0 && selectedGame !== "limbo" && (() => {
+            {/* ── Other games: always-visible card list ── */}
+            {selectedGame !== "limbo" && (() => {
               const isFiltered = targetFilter !== "";
               const target = typeof targetFilter === "number" ? targetFilter : 0;
               const isRoulette = selectedGame === "roulette";
@@ -739,10 +739,13 @@ export default function Home() {
                 <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                   <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
                     <h2 className="font-semibold text-slate-200">
-                      {t.resultsTitle} ({results.length} {t.spins})
+                      {t.resultsTitle}
+                      {results.length > 0 && (
+                        <span className="ml-2 text-slate-400 font-normal text-sm">({results.length} {t.spins})</span>
+                      )}
                     </h2>
                     <div className="flex items-center gap-3">
-                      {isFiltered && (
+                      {isFiltered && results.length > 0 && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-slate-400">
                             <span className="font-bold text-yellow-400">{target}</span>
@@ -753,50 +756,52 @@ export default function Home() {
                           </span>
                         </div>
                       )}
-                      <span className="text-sm text-slate-400">
-                        {GAMES[selectedGame].name} · Nonce {results[0].nonce} – {results[results.length - 1].nonce}
-                      </span>
+                      {results.length > 0 && (
+                        <span className="text-sm text-slate-400">
+                          {GAMES[selectedGame].name} · Nonce {results[0].nonce} – {results[results.length - 1].nonce}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="divide-y divide-slate-700">
-                    {results.map((spin) => {
-                      const v = getSpinValue(spin.result);
-                      const isHit = isFiltered && v !== null && (isRoulette ? v === target : v >= target);
-                      const isMiss = isFiltered && !isHit;
-                      return (
-                        <div
-                          key={spin.nonce}
-                          className={`px-4 py-3 flex items-start gap-4 transition-colors ${
-                            isHit ? "bg-emerald-900/30 border-l-2 border-emerald-500" : isMiss ? "opacity-40" : ""
-                          }`}
-                        >
-                          <div className="shrink-0 w-16">
-                            <div className="text-xs text-slate-500">{t.nonce}</div>
-                            <div className={`font-mono font-bold ${isHit ? "text-emerald-300" : "text-slate-300"}`}>{spin.nonce}</div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <ResultDisplay result={spin.result} t={t} />
-                          </div>
-                          {isHit && (
-                            <div className="shrink-0">
-                              <span className="text-xs bg-emerald-700 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">{t.hitBadge}</span>
+                  {results.length === 0 ? (
+                    <div className="py-12 text-center text-slate-500">
+                      <div className="text-3xl mb-2">🎲</div>
+                      <p>{t.noResults}</p>
+                      <p className="text-xs mt-1 text-slate-600">{t.noResultsHint}</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-700">
+                      {results.map((spin) => {
+                        const v = getSpinValue(spin.result);
+                        const isHit = isFiltered && v !== null && (isRoulette ? v === target : v >= target);
+                        const isMiss = isFiltered && !isHit;
+                        return (
+                          <div
+                            key={spin.nonce}
+                            className={`px-4 py-3 flex items-start gap-4 transition-colors ${
+                              isHit ? "bg-emerald-900/30 border-l-2 border-emerald-500" : isMiss ? "opacity-40" : ""
+                            }`}
+                          >
+                            <div className="shrink-0 w-16">
+                              <div className="text-xs text-slate-500">{t.nonce}</div>
+                              <div className={`font-mono font-bold ${isHit ? "text-emerald-300" : "text-slate-300"}`}>{spin.nonce}</div>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                            <div className="flex-1 min-w-0">
+                              <ResultDisplay result={spin.result} t={t} />
+                            </div>
+                            {isHit && (
+                              <div className="shrink-0">
+                                <span className="text-xs bg-emerald-700 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">{t.hitBadge}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })()}
-
-            {results.length === 0 && !loading && selectedGame !== "limbo" && (
-              <div className="text-center py-16 text-slate-500">
-                <div className="text-4xl mb-3">🎲</div>
-                <p className="text-lg font-medium">{t.noResults}</p>
-                <p className="text-sm mt-1">{t.noResultsHint}</p>
-              </div>
-            )}
           </>
         ) : (
           <div className="space-y-4">
