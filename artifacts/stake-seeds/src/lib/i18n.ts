@@ -46,6 +46,12 @@ export const translations = {
     targetFilterHintFlip: "Tura sayısı bu değere eşit veya büyük olanlar vurgulanır.",
     targetFilterHintPayout: "Ödeme çarpanı bu değere eşit veya büyük olanlar vurgulanır.",
 
+    sortByNonce: "Nonce'a Göre Sırala",
+    sortByMultiplier: "Çarpana Göre Sırala",
+    colIndex: "#",
+    colNonce: "Nonce",
+    colMultiplier: "Çarpan",
+
     resultsTitle: "Sonuçlar",
     spins: "spin",
     nonce: "Nonce",
@@ -125,6 +131,12 @@ export const translations = {
     targetFilterHintHits: "Highlights results with this many hits or more.",
     targetFilterHintFlip: "Highlights flips with this many heads or more.",
     targetFilterHintPayout: "Highlights payouts equal to or above this multiplier.",
+
+    sortByNonce: "Sort by Nonce",
+    sortByMultiplier: "Sort by Multiplier",
+    colIndex: "#",
+    colNonce: "Nonce",
+    colMultiplier: "Multiplier",
 
     resultsTitle: "Results",
     spins: "spins",

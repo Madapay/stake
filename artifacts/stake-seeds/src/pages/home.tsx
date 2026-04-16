@@ -346,6 +346,7 @@ export default function Home() {
   const [mineCount, setMineCount] = useState(3);
   const [limboTarget, setLimboTarget] = useState<number | "">(2);
   const [targetFilter, setTargetFilter] = useState<number | "">("");
+  const [limboSort, setLimboSort] = useState<"nonce" | "multiplier">("nonce");
   const [results, setResults] = useState<SpinResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [serverSeedHash, setServerSeedHash] = useState("");
@@ -612,6 +613,7 @@ export default function Home() {
               const isFiltered = targetFilter !== "";
               const target = typeof targetFilter === "number" ? targetFilter : 0;
               const isRoulette = selectedGame === "roulette";
+              const isLimbo = selectedGame === "limbo";
 
               const hits = isFiltered
                 ? results.filter((s) => {
@@ -621,6 +623,105 @@ export default function Home() {
                   })
                 : [];
 
+              /* ── LIMBO: special compact table view ── */
+              if (isLimbo) {
+                const rows = [...results].sort((a, b) => {
+                  if (limboSort === "multiplier") {
+                    const ma = (a.result as LimboResult).multiplier;
+                    const mb = (b.result as LimboResult).multiplier;
+                    return mb - ma;
+                  }
+                  return a.nonce - b.nonce;
+                });
+
+                return (
+                  <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                    {/* header */}
+                    <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
+                      <h2 className="font-semibold text-slate-200">
+                        {t.resultsTitle} ({results.length} {t.spins})
+                        {isFiltered && (
+                          <span className={`ml-3 px-2 py-0.5 rounded-full text-sm font-bold ${hits.length > 0 ? "bg-emerald-700 text-emerald-200" : "bg-slate-700 text-slate-400"}`}>
+                            {hits.length} / {results.length} {t.hits} ≥ {target}x
+                          </span>
+                        )}
+                      </h2>
+                      {/* sort toggles */}
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm">
+                          <input
+                            type="checkbox"
+                            checked={limboSort === "nonce"}
+                            onChange={() => setLimboSort("nonce")}
+                            className="accent-emerald-500 w-4 h-4"
+                          />
+                          <span className={limboSort === "nonce" ? "text-emerald-400 font-semibold" : "text-slate-400"}>
+                            {t.sortByNonce}
+                          </span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm">
+                          <input
+                            type="checkbox"
+                            checked={limboSort === "multiplier"}
+                            onChange={() => setLimboSort("multiplier")}
+                            className="accent-yellow-400 w-4 h-4"
+                          />
+                          <span className={limboSort === "multiplier" ? "text-yellow-400 font-semibold" : "text-slate-400"}>
+                            {t.sortByMultiplier}
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-700 bg-slate-900/50">
+                            <th className="px-4 py-2 text-left text-slate-400 font-semibold w-12">{t.colIndex}</th>
+                            <th className="px-4 py-2 text-left text-slate-400 font-semibold">{t.colNonce}</th>
+                            <th className="px-4 py-2 text-left text-slate-400 font-semibold">{t.colMultiplier}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700/50">
+                          {rows.map((spin, idx) => {
+                            const mult = (spin.result as LimboResult).multiplier;
+                            const isHit = isFiltered && mult >= target;
+                            const isMiss = isFiltered && !isHit;
+                            return (
+                              <tr
+                                key={spin.nonce}
+                                className={`transition-colors ${
+                                  isHit
+                                    ? "bg-emerald-900/20 border-l-2 border-emerald-500"
+                                    : isMiss
+                                    ? "opacity-35"
+                                    : "hover:bg-slate-700/30"
+                                }`}
+                              >
+                                <td className="px-4 py-2 text-slate-500 font-mono text-xs">{idx + 1}</td>
+                                <td className="px-4 py-2 font-mono font-bold text-slate-300">{spin.nonce}</td>
+                                <td className={`px-4 py-2 font-mono font-bold text-lg ${
+                                  isHit ? "text-emerald-400" : mult >= 2 ? "text-yellow-400" : "text-slate-300"
+                                }`}>
+                                  {mult.toFixed(2)}x
+                                  {isHit && (
+                                    <span className="ml-2 text-xs bg-emerald-700 text-emerald-200 px-1.5 py-0.5 rounded-full font-normal">
+                                      {t.hitBadge}
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              }
+
+              /* ── Other games: generic card list ── */
               return (
                 <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                   <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
