@@ -62,7 +62,7 @@ function getTargetHintKey(game: string): keyof T {
   return "targetFilterHint";
 }
 
-function ResultDisplay({ result, t }: { result: GameResultData; t: T }) {
+function ResultDisplay({ result, t, selectedMinesCells }: { result: GameResultData; t: T; selectedMinesCells?: Set<number> }) {
   switch (result.type) {
     case "dice": {
       const r = result as DiceResult;
@@ -155,6 +155,50 @@ function ResultDisplay({ result, t }: { result: GameResultData; t: T }) {
     case "mines": {
       const r = result as MinesResult;
       const mineSet = new Set(r.mines);
+      const hasCellSelection = selectedMinesCells && selectedMinesCells.size > 0;
+
+      if (hasCellSelection) {
+        const selectedArr = Array.from(selectedMinesCells);
+        const hitMines = selectedArr.filter(pos => mineSet.has(pos));
+        const allSafe = hitMines.length === 0;
+        return (
+          <div className="space-y-1.5 w-full">
+            <div className={`flex items-center gap-2 text-sm font-semibold ${allSafe ? "text-emerald-400" : "text-red-400"}`}>
+              {allSafe
+                ? "✓ Tüm kareler güvenli!"
+                : `💣 ${hitMines.length} mayına bastı`}
+              <span className="text-slate-500 font-normal text-xs">({selectedMinesCells.size} kare seçildi)</span>
+            </div>
+            <div className="grid grid-cols-5 gap-1">
+              {Array.from({ length: 25 }, (_, i) => i).map((pos) => {
+                const isMine = mineSet.has(pos);
+                const isSelected = selectedMinesCells.has(pos);
+                return (
+                  <div
+                    key={pos}
+                    title={`Kare ${pos + 1}${isSelected ? (isMine ? " — MAYINLI!" : " — Güvenli") : (isMine ? " — Mayın (seçilmedi)" : "")}`}
+                    className={`
+                      aspect-square rounded flex items-center justify-center text-sm font-bold
+                      transition-colors select-none
+                      ${isSelected && isMine  ? "bg-red-700 border-2 border-red-400 shadow-md shadow-red-900/50 text-white"
+                      : isSelected && !isMine ? "bg-emerald-700 border-2 border-emerald-400 shadow-md shadow-emerald-900/40 text-white"
+                      : isMine               ? "bg-red-950 border border-red-900 text-red-800 opacity-60"
+                      :                        "bg-slate-800 border border-slate-700 text-slate-600 opacity-40"}
+                    `}
+                  >
+                    {isSelected && isMine ? "💣"
+                      : isSelected && !isMine ? "💎"
+                      : isMine ? "💣"
+                      : "·"}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      /* no cell selection: show full grid */
       return (
         <div className="space-y-1.5 w-full">
           <div className="flex gap-1.5 text-xs text-slate-400 mb-1">
@@ -344,6 +388,8 @@ export default function Home() {
   const [wheelRisk, setWheelRisk] = useState("medium");
   const [plinkoRows, setPlinkoRows] = useState(16);
   const [mineCount, setMineCount] = useState(3);
+  const [selectedMinesCells, setSelectedMinesCells] = useState<Set<number>>(new Set());
+  const [minesShowSafeOnly, setMinesShowSafeOnly] = useState(false);
   const [limboTarget, setLimboTarget] = useState<number | "">(2);
   const [targetFilter, setTargetFilter] = useState<number | "">("");
   const [limboSort, setLimboSort] = useState<"nonce" | "multiplier">("nonce");
@@ -445,7 +491,7 @@ export default function Home() {
               <label className="text-sm text-slate-400 block mb-2 font-semibold">{t.gameSelect}</label>
               <select
                 value={selectedGame}
-                onChange={(e) => { setSelectedGame(e.target.value as GameType); setTargetFilter(""); }}
+                onChange={(e) => { setSelectedGame(e.target.value as GameType); setTargetFilter(""); setSelectedMinesCells(new Set()); setMinesShowSafeOnly(false); }}
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
               >
                 {Object.entries(GAMES).map(([key, g]) => (
@@ -564,38 +610,91 @@ export default function Home() {
                 )}
 
                 {selectedGame === "mines" && (
-                  <div>
-                    <label className="text-sm text-slate-400 block mb-1">{t.mineCount}</label>
-                    <input
-                      type="number"
-                      value={mineCount}
-                      onChange={(e) => setMineCount(Math.min(24, Math.max(1, parseInt(e.target.value) || 1)))}
-                      min={1}
-                      max={24}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
-                    />
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm text-slate-400 block mb-1">{t.mineCount}</label>
+                      <input
+                        type="number"
+                        value={mineCount}
+                        onChange={(e) => setMineCount(Math.min(24, Math.max(1, parseInt(e.target.value) || 1)))}
+                        min={1}
+                        max={24}
+                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm text-slate-400">{t.mineSelectCells}</label>
+                        <div className="flex items-center gap-2">
+                          {selectedMinesCells.size > 0 && (
+                            <span className="text-xs bg-emerald-700 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">
+                              {selectedMinesCells.size} {t.mineSelectedCount}
+                            </span>
+                          )}
+                          {selectedMinesCells.size > 0 && (
+                            <button
+                              onClick={() => setSelectedMinesCells(new Set())}
+                              className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                            >
+                              {t.mineClearSelection}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-5 gap-1">
+                        {Array.from({ length: 25 }, (_, i) => i).map((pos) => {
+                          const isSelected = selectedMinesCells.has(pos);
+                          return (
+                            <button
+                              key={pos}
+                              onClick={() => setSelectedMinesCells(prev => {
+                                const next = new Set(prev);
+                                if (next.has(pos)) next.delete(pos);
+                                else next.add(pos);
+                                return next;
+                              })}
+                              title={`Kare ${pos + 1}`}
+                              className={`
+                                aspect-square rounded flex items-center justify-center text-xs font-bold
+                                transition-all select-none cursor-pointer
+                                ${isSelected
+                                  ? "bg-emerald-600 border-2 border-emerald-400 text-white shadow-md shadow-emerald-900/50 scale-105"
+                                  : "bg-slate-700 border border-slate-600 text-slate-500 hover:bg-slate-600 hover:text-slate-200 hover:border-slate-400"}
+                              `}
+                            >
+                              {isSelected ? "✓" : pos + 1}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {selectedMinesCells.size === 0 && (
+                        <p className="text-xs text-slate-500 mt-1.5">{t.mineSelectHint}</p>
+                      )}
+                    </div>
                   </div>
                 )}
 
-                {/* Universal target filter — shown for all games that have a numeric value */}
-                <div>
-                  <label className="text-sm text-slate-400 block mb-1">{t.targetFilter}</label>
-                  <input
-                    type="number"
-                    value={targetFilter}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "") setTargetFilter("");
-                      else setTargetFilter(parseFloat(v));
-                    }}
-                    step={0.01}
-                    placeholder={t.targetFilterPlaceholder}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    {t[getTargetHintKey(selectedGame)] as string}
-                  </p>
-                </div>
+                {/* Universal target filter — hidden for mines (uses cell selection instead) */}
+                {selectedGame !== "mines" && (
+                  <div>
+                    <label className="text-sm text-slate-400 block mb-1">{t.targetFilter}</label>
+                    <input
+                      type="number"
+                      value={targetFilter}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "") setTargetFilter("");
+                        else setTargetFilter(parseFloat(v));
+                      }}
+                      step={0.01}
+                      placeholder={t.targetFilterPlaceholder}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      {t[getTargetHintKey(selectedGame)] as string}
+                    </p>
+                  </div>
+                )}
 
                 <div className="mt-auto">
                   <button
@@ -724,9 +823,20 @@ export default function Home() {
 
             {/* ── Other games: always-visible card list ── */}
             {selectedGame !== "limbo" && (() => {
-              const isFiltered = targetFilter !== "";
+              const isMines = selectedGame === "mines";
+              const hasCellSel = isMines && selectedMinesCells.size > 0;
+              const isFiltered = !isMines && targetFilter !== "";
               const target = typeof targetFilter === "number" ? targetFilter : 0;
               const isRoulette = selectedGame === "roulette";
+
+              /* mines: safe-only filter */
+              const safeResults = hasCellSel && minesShowSafeOnly
+                ? results.filter(s => !Array.from(selectedMinesCells).some(pos => new Set((s.result as MinesResult).mines).has(pos)))
+                : results;
+              const safeCount = hasCellSel
+                ? results.filter(s => !Array.from(selectedMinesCells).some(pos => new Set((s.result as MinesResult).mines).has(pos))).length
+                : 0;
+
               const hits = isFiltered
                 ? results.filter((s) => {
                     const v = getSpinValue(s.result);
@@ -735,16 +845,38 @@ export default function Home() {
                   })
                 : [];
 
+              const displayResults = minesShowSafeOnly ? safeResults : results;
+
               return (
                 <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                   <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between flex-wrap gap-2">
                     <h2 className="font-semibold text-slate-200">
                       {t.resultsTitle}
                       {results.length > 0 && (
-                        <span className="ml-2 text-slate-400 font-normal text-sm">({results.length} {t.spins})</span>
+                        <span className="ml-2 text-slate-400 font-normal text-sm">
+                          ({minesShowSafeOnly ? `${safeResults.length} / ${results.length}` : results.length} {t.spins})
+                        </span>
+                      )}
+                      {hasCellSel && results.length > 0 && (
+                        <span className={`ml-3 px-2 py-0.5 rounded-full text-sm font-bold ${safeCount > 0 ? "bg-emerald-700 text-emerald-200" : "bg-slate-700 text-slate-400"}`}>
+                          {safeCount} / {results.length} {t.mineShowSafeOnly}
+                        </span>
                       )}
                     </h2>
                     <div className="flex items-center gap-3">
+                      {hasCellSel && results.length > 0 && (
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm">
+                          <input
+                            type="checkbox"
+                            checked={minesShowSafeOnly}
+                            onChange={(e) => setMinesShowSafeOnly(e.target.checked)}
+                            className="accent-emerald-500 w-4 h-4"
+                          />
+                          <span className={minesShowSafeOnly ? "text-emerald-400 font-semibold" : "text-slate-400"}>
+                            {t.mineShowSafeOnly}
+                          </span>
+                        </label>
+                      )}
                       {isFiltered && results.length > 0 && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-slate-400">
@@ -771,25 +903,33 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="divide-y divide-slate-700">
-                      {results.map((spin) => {
-                        const v = getSpinValue(spin.result);
+                      {displayResults.map((spin) => {
+                        const isMinesGame = spin.result.type === "mines";
+                        const v = isFiltered && !isMinesGame ? getSpinValue(spin.result) : null;
                         const isHit = isFiltered && v !== null && (isRoulette ? v === target : v >= target);
                         const isMiss = isFiltered && !isHit;
+                        /* mines with cell selection: determine safe/boom */
+                        const minesAllSafe = isMinesGame && hasCellSel && !Array.from(selectedMinesCells).some(pos => new Set((spin.result as MinesResult).mines).has(pos));
+                        const minesBoom = isMinesGame && hasCellSel && !minesAllSafe;
                         return (
                           <div
                             key={spin.nonce}
                             className={`px-4 py-3 flex items-start gap-4 transition-colors ${
-                              isHit ? "bg-emerald-900/30 border-l-2 border-emerald-500" : isMiss ? "opacity-40" : ""
+                              minesAllSafe ? "bg-emerald-900/20 border-l-2 border-emerald-500"
+                              : minesBoom   ? "bg-red-900/20 border-l-2 border-red-600 opacity-60"
+                              : isHit       ? "bg-emerald-900/30 border-l-2 border-emerald-500"
+                              : isMiss      ? "opacity-40"
+                              : ""
                             }`}
                           >
                             <div className="shrink-0 w-16">
                               <div className="text-xs text-slate-500">{t.nonce}</div>
-                              <div className={`font-mono font-bold ${isHit ? "text-emerald-300" : "text-slate-300"}`}>{spin.nonce}</div>
+                              <div className={`font-mono font-bold ${minesAllSafe ? "text-emerald-300" : minesBoom ? "text-red-400" : isHit ? "text-emerald-300" : "text-slate-300"}`}>{spin.nonce}</div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <ResultDisplay result={spin.result} t={t} />
+                              <ResultDisplay result={spin.result} t={t} selectedMinesCells={isMinesGame ? selectedMinesCells : undefined} />
                             </div>
-                            {isHit && (
+                            {(minesAllSafe || isHit) && (
                               <div className="shrink-0">
                                 <span className="text-xs bg-emerald-700 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">{t.hitBadge}</span>
                               </div>
