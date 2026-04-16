@@ -131,6 +131,61 @@ const PLINKO_MULTIPLIERS: Record<string, Record<number, number[]>> = {
   },
 };
 
+const KENO_MULTIPLIERS: Record<string, number[][]> = {
+  classic: [
+    [],
+    [0, 3.96],
+    [0, 1, 5.28],
+    [0, 1, 2, 10.8],
+    [0, 0.5, 1.5, 4, 20],
+    [0, 0.5, 1, 3, 20, 70],
+    [0, 0.5, 1, 2, 6, 30, 200],
+    [0, 0.5, 0.5, 1, 5, 15, 100, 700],
+    [0, 0.5, 0.5, 1, 3, 10, 50, 300, 3000],
+    [0, 0.5, 0.5, 1, 2, 5, 15, 80, 500, 5000],
+    [0, 0, 0.5, 1, 2, 5, 10, 30, 100, 500, 10000],
+  ],
+  low: [
+    [],
+    [0, 2.2],
+    [0, 1, 3],
+    [0, 1, 1.5, 6],
+    [0, 0.5, 1, 2, 10],
+    [0, 0.5, 1, 1.5, 5, 18],
+    [0, 0.5, 1, 1.5, 2, 7, 30],
+    [0, 0.5, 0.5, 1, 1.5, 5, 15, 60],
+    [0, 0.5, 0.5, 1, 1.5, 3, 8, 30, 200],
+    [0, 0.5, 0.5, 1, 1.5, 2, 5, 15, 80, 500],
+    [0, 0, 0.5, 1, 1.5, 2, 4, 10, 30, 100, 1000],
+  ],
+  medium: [
+    [],
+    [0, 1.96],
+    [0, 0, 3.8],
+    [0, 0, 2, 8],
+    [0, 0, 1, 4, 14],
+    [0, 0, 1, 3, 10, 50],
+    [0, 0, 0.5, 2, 5, 20, 100],
+    [0, 0, 0.5, 1.5, 4, 15, 80, 400],
+    [0, 0, 0.5, 1.5, 3, 8, 25, 150, 2000],
+    [0, 0, 0.5, 1.5, 2, 5, 15, 80, 300, 5000],
+    [0, 0, 0.5, 1, 2, 4, 8, 20, 80, 300, 10000],
+  ],
+  high: [
+    [],
+    [0, 1.96],
+    [0, 0, 5.28],
+    [0, 0, 2, 20],
+    [0, 0, 1, 8, 120],
+    [0, 0, 0.5, 3, 30, 300],
+    [0, 0, 0, 2, 10, 100, 1000],
+    [0, 0, 0, 1, 10, 60, 600, 8000],
+    [0, 0, 0, 1, 5, 30, 200, 2000, 30000],
+    [0, 0, 0, 1, 4, 15, 100, 1000, 10000, 100000],
+    [0, 0, 0, 1, 3, 10, 50, 400, 5000, 50000, 1000000],
+  ],
+};
+
 export async function hmacSha256(serverSeed: string, message: string): Promise<Uint8Array> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -232,7 +287,7 @@ export interface RouletteResult { type: "roulette"; pocket: number }
 export interface DiamondsResult { type: "diamonds"; gems: string[] }
 export interface PlinkoResult { type: "plinko"; path: string[]; slot: number; multiplier: number }
 export interface MinesResult { type: "mines"; mines: number[] }
-export interface KenoResult { type: "keno"; hits: number[] }
+export interface KenoResult { type: "keno"; hits: number[]; selected: number[]; matchCount: number; multiplier: number }
 export interface CardsResult { type: "cards"; cards: string[]; game: string }
 export interface VideoPokerResult { type: "video-poker"; cards: string[] }
 export interface CrashResult { type: "crash"; multiplier: number }
@@ -247,7 +302,7 @@ export async function calculateGameResult(
   serverSeed: string,
   clientSeed: string,
   nonce: number,
-  options?: { wheelSegments?: string; wheelRisk?: string; plinkoRows?: number; plinkoRisk?: string; mineCount?: number }
+  options?: { wheelSegments?: string; wheelRisk?: string; plinkoRows?: number; plinkoRisk?: string; mineCount?: number; kenoRisk?: string; kenoSelected?: number[] }
 ): Promise<GameResultData> {
   switch (game) {
     case "dice": {
@@ -321,7 +376,14 @@ export async function calculateGameResult(
         hits.push(remaining[index]);
         remaining.splice(index, 1);
       }
-      return { type: "keno", hits };
+      const risk = options?.kenoRisk || "classic";
+      const selected = options?.kenoSelected || [];
+      const hitSet = new Set(hits);
+      const matchCount = selected.filter((n) => hitSet.has(n)).length;
+      const pickCount = Math.min(Math.max(selected.length, 1), 10);
+      const mults = KENO_MULTIPLIERS[risk]?.[pickCount] || [];
+      const multiplier = mults[matchCount] ?? 0;
+      return { type: "keno", hits, selected, matchCount, multiplier };
     }
     case "blackjack":
     case "hilo": {

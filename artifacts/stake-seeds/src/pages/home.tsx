@@ -43,7 +43,7 @@ function getSpinValue(result: GameResultData): number | null {
     case "wheel": return (result as WheelResult).payout;
     case "roulette": return (result as RouletteResult).pocket;
     case "plinko": return (result as PlinkoResult).multiplier;
-    case "keno": return (result as KenoResult).hits.length;
+    case "keno": return (result as KenoResult).multiplier;
     case "flip": return (result as FlipResult).flips.filter((f) => f === "Tura" || f === "Heads").length;
     case "snakes": return (result as SnakesResult).rolls.reduce((a, b) => a + b, 0);
     default: return null;
@@ -56,7 +56,7 @@ function getTargetHintKey(game: string): keyof T {
   if (game === "wheel") return "targetFilterHintPayout";
   if (game === "roulette") return "targetFilterHintPocket";
   if (game === "plinko") return "targetFilterHintMult";
-  if (game === "keno") return "targetFilterHintHits";
+  if (game === "keno") return "targetFilterHintMult";
   if (game === "flip") return "targetFilterHintFlip";
   if (game === "snakes") return "targetFilterHintHits";
   return "targetFilterHint";
@@ -270,18 +270,42 @@ function ResultDisplay({ result, t, selectedMinesCells }: { result: GameResultDa
     case "keno": {
       const r = result as KenoResult;
       const allNums = Array.from({ length: 40 }, (_, i) => i + 1);
+      const hitSet = new Set(r.hits);
+      const selSet = new Set(r.selected);
+      const hasSelected = r.selected.length > 0;
       return (
-        <div className="grid grid-cols-10 gap-0.5">
-          {allNums.map((n) => (
-            <div
-              key={n}
-              className={`w-7 h-7 rounded text-xs flex items-center justify-center font-bold ${
-                r.hits.includes(n) ? "bg-yellow-500 text-slate-900" : "bg-slate-700 text-slate-400"
-              }`}
-            >
-              {n}
+        <div className="space-y-2">
+          {hasSelected && (
+            <div className="flex items-center gap-3">
+              <span className="text-emerald-400 font-bold text-lg">{r.multiplier}x</span>
+              <span className="text-slate-400 text-sm">{r.matchCount}/{r.selected.length} {t.kenoMatchCount}</span>
             </div>
-          ))}
+          )}
+          <div className="grid grid-cols-10 gap-0.5">
+            {allNums.map((n) => {
+              const isHit = hitSet.has(n);
+              const isSel = selSet.has(n);
+              let cls = "bg-slate-700 text-slate-500";
+              if (isSel && isHit) cls = "bg-emerald-500 text-slate-900 ring-2 ring-yellow-400";
+              else if (isSel && !isHit) cls = "bg-yellow-600 text-yellow-100";
+              else if (isHit && !isSel) cls = "bg-slate-500 text-slate-200";
+              return (
+                <div
+                  key={n}
+                  className={`w-7 h-7 rounded text-xs flex items-center justify-center font-bold ${cls}`}
+                >
+                  {n}
+                </div>
+              );
+            })}
+          </div>
+          {hasSelected && (
+            <div className="flex gap-3 text-xs text-slate-500 flex-wrap">
+              <span><span className="inline-block w-3 h-3 rounded bg-emerald-500 mr-1"></span>{t.kenoLegendHit}</span>
+              <span><span className="inline-block w-3 h-3 rounded bg-yellow-600 mr-1"></span>{t.kenoLegendSelected}</span>
+              <span><span className="inline-block w-3 h-3 rounded bg-slate-500 mr-1"></span>{t.kenoLegendDrawn}</span>
+            </div>
+          )}
         </div>
       );
     }
@@ -391,6 +415,8 @@ export default function Home() {
   const [wheelRisk, setWheelRisk] = useState("medium");
   const [plinkoRows, setPlinkoRows] = useState(16);
   const [plinkoRisk, setPlinkoRisk] = useState("medium");
+  const [kenoRisk, setKenoRisk] = useState("classic");
+  const [kenoSelected, setKenoSelected] = useState<Set<number>>(new Set());
   const [mineCount, setMineCount] = useState(3);
   const [selectedMinesCells, setSelectedMinesCells] = useState<Set<number>>(new Set());
   const [minesShowSafeOnly, setMinesShowSafeOnly] = useState(false);
@@ -416,6 +442,8 @@ export default function Home() {
           plinkoRows,
           plinkoRisk,
           mineCount,
+          kenoRisk,
+          kenoSelected: Array.from(kenoSelected),
         });
         spinResults.push({ nonce: n, game: selectedGame, result });
       }
@@ -423,7 +451,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [serverSeed, clientSeed, nonceStart, nonceCount, selectedGame, wheelSegments, wheelRisk, plinkoRows, plinkoRisk, mineCount]);
+  }, [serverSeed, clientSeed, nonceStart, nonceCount, selectedGame, wheelSegments, wheelRisk, plinkoRows, plinkoRisk, mineCount, kenoRisk, kenoSelected]);
 
   const hashSeed = useCallback(async () => {
     if (!serverSeed) return;
@@ -624,6 +652,71 @@ export default function Home() {
                           <option key={n} value={n}>{n}</option>
                         ))}
                       </select>
+                    </div>
+                  </div>
+                )}
+
+                {selectedGame === "keno" && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm text-slate-400 block mb-1">{t.kenoRisk}</label>
+                      <select
+                        value={kenoRisk}
+                        onChange={(e) => setKenoRisk(e.target.value)}
+                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="classic">{t.riskClassic}</option>
+                        <option value="low">{t.riskLow}</option>
+                        <option value="medium">{t.riskMedium}</option>
+                        <option value="high">{t.riskHigh}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm text-slate-400">{t.kenoSelectNums}</label>
+                        <div className="flex items-center gap-2">
+                          {kenoSelected.size > 0 && (
+                            <span className="text-xs bg-yellow-600 text-yellow-100 px-2 py-0.5 rounded-full font-semibold">
+                              {kenoSelected.size} {t.kenoSelectedCount}
+                            </span>
+                          )}
+                          {kenoSelected.size > 0 && (
+                            <button
+                              onClick={() => setKenoSelected(new Set())}
+                              className="text-xs text-slate-400 hover:text-red-400 transition-colors"
+                            >
+                              {t.kenoClearSelection}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 mb-2">{t.kenoSelectHint}</p>
+                      <div className="grid grid-cols-8 gap-1">
+                        {Array.from({ length: 40 }, (_, i) => i + 1).map((n) => {
+                          const isSelected = kenoSelected.has(n);
+                          return (
+                            <button
+                              key={n}
+                              onClick={() => {
+                                const next = new Set(kenoSelected);
+                                if (isSelected) {
+                                  next.delete(n);
+                                } else if (next.size < 10) {
+                                  next.add(n);
+                                }
+                                setKenoSelected(next);
+                              }}
+                              className={`h-8 rounded text-xs font-bold transition-colors ${
+                                isSelected
+                                  ? "bg-yellow-500 text-slate-900"
+                                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                              }`}
+                            >
+                              {n}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
