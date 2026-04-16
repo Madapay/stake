@@ -131,7 +131,7 @@ const PLINKO_MULTIPLIERS: Record<string, Record<number, number[]>> = {
   },
 };
 
-const KENO_MULTIPLIERS: Record<string, number[][]> = {
+export const KENO_MULTIPLIERS: Record<string, number[][]> = {
   classic: [
     [],
     [0, 3.96],
@@ -420,6 +420,24 @@ export async function calculateGameResult(
       return { type: "rock-paper-scissors", choices };
     }
   }
+}
+
+function comb(n: number, k: number): number {
+  if (k > n || k < 0) return 0;
+  if (k === 0) return 1;
+  let result = 1;
+  for (let i = 0; i < k; i++) {
+    result = result * (n - i) / (i + 1);
+  }
+  return result;
+}
+
+export function minesMultiplier(selected: number, mines: number): number {
+  if (selected <= 0) return 0;
+  const safe = 25 - mines;
+  const prob = comb(safe, selected) / comb(25, selected);
+  if (prob <= 0) return 0;
+  return Math.floor(0.99 / prob * 100) / 100;
 }
 
 export async function sha256Hex(input: string): Promise<string> {

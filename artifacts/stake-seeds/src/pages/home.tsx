@@ -22,6 +22,8 @@ import {
   RockPaperScissorsResult,
   ChickenResult,
   PumpResult,
+  KENO_MULTIPLIERS,
+  minesMultiplier,
 } from "@/lib/provably-fair";
 import { Lang, T, translations } from "@/lib/i18n";
 
@@ -717,6 +719,28 @@ export default function Home() {
                           );
                         })}
                       </div>
+                      {kenoSelected.size > 0 && (() => {
+                        const mults = KENO_MULTIPLIERS[kenoRisk]?.[kenoSelected.size] || [];
+                        return (
+                          <div className="mt-2 p-2 bg-slate-800 rounded-lg">
+                            <p className="text-xs text-slate-400 mb-1.5 font-semibold">İsabet → Çarpan</p>
+                            <div className="flex flex-wrap gap-1">
+                              {mults.map((m, i) => (
+                                <span
+                                  key={i}
+                                  className={`text-xs px-1.5 py-0.5 rounded font-mono ${
+                                    m > 1 ? "bg-emerald-800 text-emerald-300" :
+                                    m > 0 ? "bg-slate-600 text-slate-300" :
+                                    "bg-slate-700 text-slate-500"
+                                  }`}
+                                >
+                                  {i}/{kenoSelected.size}→{m}x
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
@@ -741,6 +765,8 @@ export default function Home() {
                           {selectedMinesCells.size > 0 && (
                             <span className="text-xs bg-emerald-700 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">
                               {selectedMinesCells.size} {t.mineSelectedCount}
+                              {" → "}
+                              <span className="text-yellow-300">{minesMultiplier(selectedMinesCells.size, mineCount)}x</span>
                             </span>
                           )}
                           {selectedMinesCells.size > 0 && (
