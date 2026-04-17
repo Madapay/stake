@@ -68,10 +68,10 @@ function ResultDisplay({ result, t, selectedMinesCells }: { result: GameResultDa
   switch (result.type) {
     case "dice": {
       const r = result as DiceResult;
-      const mult = r.roll > 0 ? 99 / r.roll : 9999;
+      const multStr = r.roll > 0 ? `${(99 / r.roll).toFixed(2)}x` : "∞x";
       return (
         <div className="flex items-center gap-3">
-          <div className="text-3xl font-bold text-emerald-400">{mult.toFixed(2)}x</div>
+          <div className="text-3xl font-bold text-emerald-400">{multStr}</div>
           <div className="text-sm text-slate-400">({r.roll.toFixed(2)} / 100.00)</div>
         </div>
       );
