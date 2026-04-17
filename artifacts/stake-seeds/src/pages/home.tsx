@@ -39,7 +39,7 @@ const ROULETTE_COLORS: Record<number, "red" | "black" | "green"> = {
 
 function getSpinValue(result: GameResultData): number | null {
   switch (result.type) {
-    case "dice": { const roll = (result as DiceResult).roll; return roll > 0 ? 99 / roll : 9999; }
+    case "dice": { const roll = (result as DiceResult).roll; return (roll <= 0 || roll >= 100) ? 9900 : 99 / roll; }
     case "limbo": return (result as LimboResult).multiplier;
     case "crash": return (result as CrashResult).multiplier;
     case "wheel": return (result as WheelResult).payout;
@@ -68,7 +68,7 @@ function ResultDisplay({ result, t, selectedMinesCells }: { result: GameResultDa
   switch (result.type) {
     case "dice": {
       const r = result as DiceResult;
-      const multStr = r.roll > 0 ? `${(99 / r.roll).toFixed(2)}x` : "∞x";
+      const multStr = (r.roll <= 0 || r.roll >= 100) ? "9900.00x" : `${(99 / r.roll).toFixed(2)}x`;
       return (
         <div className="flex items-center gap-3">
           <div className="text-3xl font-bold text-emerald-400">{multStr}</div>
