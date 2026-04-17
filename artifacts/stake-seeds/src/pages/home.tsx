@@ -70,10 +70,11 @@ function ResultDisplay({ result, t, selectedMinesCells, diceDirection }: { resul
       const r = result as DiceResult;
       let multStr: string;
       if (diceDirection === "over") {
-        const rem = 100 - r.roll;
-        multStr = rem <= 0 ? "9900.00x" : `${(99 / rem).toFixed(2)}x`;
+        const denom = 100 - r.roll + 0.01;
+        multStr = `${(99 / denom).toFixed(2)}x`;
       } else {
-        multStr = (r.roll <= 0 || r.roll >= 100) ? "9900.00x" : `${(99 / r.roll).toFixed(2)}x`;
+        const denom = r.roll + 0.01;
+        multStr = `${(99 / denom).toFixed(2)}x`;
       }
       return (
         <div className="flex items-center gap-3">
