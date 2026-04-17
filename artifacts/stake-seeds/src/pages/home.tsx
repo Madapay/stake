@@ -420,6 +420,7 @@ export default function Home() {
   const [plinkoRisk, setPlinkoRisk] = useState("medium");
   const [kenoRisk, setKenoRisk] = useState("classic");
   const [kenoSelected, setKenoSelected] = useState<Set<number>>(new Set());
+  const [diceDirection, setDiceDirection] = useState<"under" | "over">("under");
   const [mineCount, setMineCount] = useState(3);
   const [selectedMinesCells, setSelectedMinesCells] = useState<Set<number>>(new Set());
   const [minesShowSafeOnly, setMinesShowSafeOnly] = useState(false);
@@ -599,6 +600,26 @@ export default function Home() {
               {/* Game-specific options + Target filter + Calculate */}
               <div className="bg-slate-800 rounded-xl p-4 space-y-4 border border-slate-700 flex flex-col">
                 <h2 className="font-semibold text-slate-200">{t.gameOptions}</h2>
+
+                {selectedGame === "dice" && (
+                  <div>
+                    <label className="text-sm text-slate-400 block mb-1">{t.diceDirection}</label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setDiceDirection("under")}
+                        className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${diceDirection === "under" ? "bg-emerald-600 border-emerald-500 text-white" : "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"}`}
+                      >
+                        {t.diceUnder}
+                      </button>
+                      <button
+                        onClick={() => setDiceDirection("over")}
+                        className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${diceDirection === "over" ? "bg-emerald-600 border-emerald-500 text-white" : "bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"}`}
+                      >
+                        {t.diceOver}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {selectedGame === "wheel" && (
                   <div className="grid grid-cols-2 gap-3">
@@ -988,8 +1009,16 @@ export default function Home() {
                 ? results.filter(s => !Array.from(selectedMinesCells).some(pos => new Set((s.result as MinesResult).mines).has(pos))).length
                 : 0;
 
+              const isDice = selectedGame === "dice";
+              const diceWins = (roll: number) => {
+                if (target <= 0) return false;
+                if (diceDirection === "under") return roll < (99 / target);
+                return roll > (100 - 99 / target);
+              };
+
               const hits = isFiltered
                 ? results.filter((s) => {
+                    if (isDice) return diceWins((s.result as DiceResult).roll);
                     const v = getSpinValue(s.result);
                     if (v === null) return false;
                     return isRoulette ? v === target : v >= target;
@@ -1064,8 +1093,12 @@ export default function Home() {
                     <div className="divide-y divide-slate-700">
                       {displayResults.map((spin) => {
                         const isMinesGame = spin.result.type === "mines";
-                        const v = isFiltered && !isMinesGame ? getSpinValue(spin.result) : null;
-                        const isHit = isFiltered && v !== null && (isRoulette ? v === target : v >= target);
+                        const v = isFiltered && !isMinesGame && !isDice ? getSpinValue(spin.result) : null;
+                        const isHit = isFiltered && !isMinesGame && (
+                          isDice
+                            ? diceWins((spin.result as DiceResult).roll)
+                            : v !== null && (isRoulette ? v === target : v >= target)
+                        );
                         /* mines with cell selection: determine safe/boom */
                         const minesAllSafe = isMinesGame && hasCellSel && !Array.from(selectedMinesCells).some(pos => new Set((spin.result as MinesResult).mines).has(pos));
                         const minesBoom = isMinesGame && hasCellSel && !minesAllSafe;
