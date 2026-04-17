@@ -529,8 +529,8 @@ export default function Home() {
                 onChange={(e) => { setSelectedGame(e.target.value as GameType); setTargetFilter(""); setSelectedMinesCells(new Set()); setMinesShowSafeOnly(false); }}
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
               >
-                {Object.entries(GAMES).map(([key, g]) => (
-                  <option key={key} value={key}>{g.name}</option>
+                {(["dice", "limbo", "plinko", "wheel", "mines"] as GameType[]).map((key) => (
+                  <option key={key} value={key}>{GAMES[key].name}</option>
                 ))}
               </select>
               <p className="text-xs text-slate-500 mt-1.5">{GAMES[selectedGame].description}</p>
@@ -752,7 +752,16 @@ export default function Home() {
                       <input
                         type="number"
                         value={mineCount}
-                        onChange={(e) => setMineCount(Math.min(24, Math.max(1, parseInt(e.target.value) || 1)))}
+                        onChange={(e) => {
+                          const newCount = Math.min(24, Math.max(1, parseInt(e.target.value) || 1));
+                          setMineCount(newCount);
+                          const maxSafe = 25 - newCount;
+                          setSelectedMinesCells(prev => {
+                            if (prev.size <= maxSafe) return prev;
+                            const trimmed = Array.from(prev).slice(0, maxSafe);
+                            return new Set(trimmed);
+                          });
+                        }}
                         min={1}
                         max={24}
                         className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
@@ -787,8 +796,11 @@ export default function Home() {
                               key={pos}
                               onClick={() => setSelectedMinesCells(prev => {
                                 const next = new Set(prev);
-                                if (next.has(pos)) next.delete(pos);
-                                else next.add(pos);
+                                if (next.has(pos)) {
+                                  next.delete(pos);
+                                } else if (next.size < 25 - mineCount) {
+                                  next.add(pos);
+                                }
                                 return next;
                               })}
                               title={`Kare ${pos + 1}`}
