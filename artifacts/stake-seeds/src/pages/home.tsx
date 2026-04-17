@@ -64,11 +64,17 @@ function getTargetHintKey(game: string): keyof T {
   return "targetFilterHint";
 }
 
-function ResultDisplay({ result, t, selectedMinesCells }: { result: GameResultData; t: T; selectedMinesCells?: Set<number> }) {
+function ResultDisplay({ result, t, selectedMinesCells, diceDirection }: { result: GameResultData; t: T; selectedMinesCells?: Set<number>; diceDirection?: "under" | "over" }) {
   switch (result.type) {
     case "dice": {
       const r = result as DiceResult;
-      const multStr = (r.roll <= 0 || r.roll >= 100) ? "9900.00x" : `${(99 / r.roll).toFixed(2)}x`;
+      let multStr: string;
+      if (diceDirection === "over") {
+        const rem = 100 - r.roll;
+        multStr = rem <= 0 ? "9900.00x" : `${(99 / rem).toFixed(2)}x`;
+      } else {
+        multStr = (r.roll <= 0 || r.roll >= 100) ? "9900.00x" : `${(99 / r.roll).toFixed(2)}x`;
+      }
       return (
         <div className="flex items-center gap-3">
           <div className="text-3xl font-bold text-emerald-400">{multStr}</div>
@@ -1117,7 +1123,7 @@ export default function Home() {
                               <div className={`font-mono font-bold ${minesAllSafe ? "text-emerald-300" : minesBoom ? "text-red-400" : isHit ? "text-emerald-300" : "text-slate-300"}`}>{spin.nonce}</div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <ResultDisplay result={spin.result} t={t} selectedMinesCells={isMinesGame ? selectedMinesCells : undefined} />
+                              <ResultDisplay result={spin.result} t={t} selectedMinesCells={isMinesGame ? selectedMinesCells : undefined} diceDirection={isDice ? diceDirection : undefined} />
                             </div>
                             {(minesAllSafe || isHit) && (
                               <div className="shrink-0">
